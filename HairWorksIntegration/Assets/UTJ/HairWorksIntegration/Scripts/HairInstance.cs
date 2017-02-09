@@ -12,6 +12,7 @@ namespace UTJ
 {
     [AddComponentMenu("UTJ/Hair Works Integration/Hair Instance")]
     [ExecuteInEditMode]
+    [Serializable]
     public class HairInstance : MonoBehaviour
     {
         #region static
