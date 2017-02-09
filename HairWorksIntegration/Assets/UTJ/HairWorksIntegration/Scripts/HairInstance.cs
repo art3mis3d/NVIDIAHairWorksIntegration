@@ -15,18 +15,18 @@ namespace UTJ
     public class HairInstance : MonoBehaviour
     {
         #region static
-        static HashSet<HairInstance> s_instances;
+        static List<HairInstance> s_instances;
         static int s_nth_LateUpdate;
         static int s_nth_OnWillRenderObject;
 
         static CommandBuffer s_command_buffer;
         static HashSet<Camera> s_cameras = new HashSet<Camera>();
 
-        static public HashSet<HairInstance> GetInstances()
+        static public List<HairInstance> GetInstances()
         {
             if (s_instances == null)
             {
-                s_instances = new HashSet<HairInstance>();
+                s_instances = new List<HairInstance>();
             }
             return s_instances;
         }
@@ -56,7 +56,37 @@ namespace UTJ
         public uint asset_id { get { return m_hasset; } }
         public uint instance_id { get { return m_hinstance; } }
 
+        [HideInInspector]
+        public Texture2D root;
+        [HideInInspector]
+        public Texture2D tip;
+        [HideInInspector]
+        public Texture2D specular;
+        [HideInInspector]
+        public Texture2D clump;
+        [HideInInspector]
+        public Texture2D density;
+        [HideInInspector]
+        public Texture2D stiffness;
+        [HideInInspector]
+        public Texture2D waviness;
+        [HideInInspector]
+        public Texture2D width;
+        [HideInInspector]
+        public Texture2D rootStiffness;
+        [HideInInspector]
+        public Texture2D clumpRoundness;
+        [HideInInspector]
+        public Texture2D waveFrequency;
+        [HideInInspector]
+        public Texture2D strand;
+        [HideInInspector]
+        public Texture2D length;
+        [HideInInspector]
+        public Texture2D weights;
 
+        private Dictionary<hwi.TextureType, Texture2D> textureDictionary = new Dictionary<hwi.TextureType, Texture2D>();
+        private List<Texture2D> textures = new List<Texture2D>();
 
         void RepaintWindow()
         {
@@ -144,12 +174,28 @@ namespace UTJ
 
         public void AssignTexture(hwi.TextureType type, Texture2D tex)
         {
+            if (tex == null)
+                return;
+
             hwi.hwInstanceSetTexture(m_hinstance, type, tex.GetNativeTexturePtr());
+        }
+
+        public void AssignAllTextures()
+        {
+            SetTextureDictionary();
+
+            hwi.TextureType[] types = (hwi.TextureType[])Enum.GetValues(typeof(hwi.TextureType));
+
+            for (int i = 0; i < textures.Count; i++)
+            {
+                    AssignTexture(types[i], textureDictionary[types[i]]);
+            }
         }
 
         public void UpdateBones()
         {
             int num_bones = hwi.hwAssetGetNumBones(m_hasset);
+
             if (m_bones == null || m_bones.Length != num_bones)
             {
                 m_bones = new Transform[num_bones];
@@ -211,6 +257,39 @@ namespace UTJ
             b = tmp;
         }
 
+        void SetTextureList()
+        {
+            textures = new List<Texture2D>();
+            textures.Add(density);
+            textures.Add(root);
+            textures.Add(tip);
+            textures.Add(width);
+            textures.Add(stiffness);
+            textures.Add(rootStiffness);
+            textures.Add(clump);
+            textures.Add(clumpRoundness);
+            textures.Add(waviness);
+            textures.Add(waveFrequency);
+            textures.Add(strand);
+            textures.Add(length);
+            textures.Add(specular);
+            textures.Add(weights);
+
+        }
+
+        void SetTextureDictionary()
+        {
+            SetTextureList();
+
+            textureDictionary = new Dictionary<hwi.TextureType, Texture2D>();
+
+            hwi.TextureType[] types = (hwi.TextureType[])Enum.GetValues(typeof(hwi.TextureType));
+
+            for (int i = 0; i < textures.Count; i++)
+            {
+                textureDictionary.Add(types[i], textures[i]);
+            }
+        }
 
 
 #if UNITY_EDITOR
@@ -276,12 +355,12 @@ namespace UTJ
         {
             LoadHairShader(m_hair_shader);
             LoadHairAsset(m_hair_asset, false);
+            AssignAllTextures();
         }
 
         void Update()
         {
             if (!m_hasset) { return; }
-
             UpdateBones();
             hwi.hwInstanceSetDescriptor(m_hinstance, ref m_params);
             hwi.hwInstanceUpdateSkinningMatrices(m_hinstance, m_skinning_matrices.Length, m_skinning_matrices_ptr);
@@ -297,26 +376,26 @@ namespace UTJ
                 m_probe_mesh.bounds = new Bounds(center, size);
             }
 
-
             s_nth_LateUpdate = 0;
         }
 
-        void LateUpdate()
+       void LateUpdate()
         {
             if (s_nth_LateUpdate++ == 0)
             {
-                hwi.hwStepSimulation(Time.deltaTime);
+                hwi.hwStepSimulation(0.017f);
             }
         }
 
-        void OnWillRenderObject()
+       void OnWillRenderObject()
         {
             if (s_nth_OnWillRenderObject++ == 0)
             {
                 BeginRender();
-                foreach (var a in GetInstances())
+                
+                for (int i = 0; i < GetInstances().Count; i++)
                 {
-                    a.Render();
+                    GetInstances()[i].Render();
                 }
                 EndRender();
             }
@@ -326,9 +405,6 @@ namespace UTJ
         {
             s_nth_OnWillRenderObject = 0;
         }
-
-
-
 
         static public bool IsDeferred(Camera cam)
         {
@@ -370,7 +446,8 @@ namespace UTJ
                 s_command_buffer.IssuePluginEvent(hwi.hwGetRenderEventFunc(), 0);
             }
 
-            var cam = Camera.current;
+            Camera cam = Camera.current;
+
             if (cam != null)
             {
                 Matrix4x4 V = cam.worldToCameraMatrix;

@@ -13,15 +13,15 @@ namespace UTJ
     public class HairLight : MonoBehaviour
     {
         #region static
-        static HashSet<HairLight> s_instances;
+        static List<HairLight> s_instances;
         static hwi.LightData[] s_light_data;
         static IntPtr s_light_data_ptr;
 
-        static public HashSet<HairLight> GetInstances()
+        static public List<HairLight> GetInstances()
         {
             if (s_instances == null)
             {
-                s_instances = new HashSet<HairLight>();
+                s_instances = new List<HairLight>();
             }
             return s_instances;
         }
@@ -34,13 +34,14 @@ namespace UTJ
                 s_light_data_ptr = Marshal.UnsafeAddrOfPinnedArrayElement(s_light_data, 0);
             }
 
-            var instances = GetInstances();
+            List<HairLight> instances = GetInstances();
             int n = Mathf.Min(instances.Count, hwi.LightData.MaxLights);
-            int i = 0;
-            foreach (var l in instances)
+            for (int i = 0; i < instances.Count; i++)
             {
-                s_light_data[i] = l.GetLightData();
-                if (++i == n) { break; }
+                if (i == n)
+                    break;
+
+                s_light_data[i] = instances[i].GetLightData();
             }
             hwi.hwSetLights(n, s_light_data_ptr);
         }

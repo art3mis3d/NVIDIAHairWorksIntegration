@@ -1,7 +1,8 @@
 using UnityEngine;
+using UnityEngine.UI;
 using System.Collections;
 
-[RequireComponent(typeof(GUIText))]
+[RequireComponent(typeof(Text))]
 public class FrameRateCounter : MonoBehaviour
 {
     public float m_update_interval = 0.5f;
@@ -10,11 +11,13 @@ public class FrameRateCounter : MonoBehaviour
     private int m_frames = 0; // Frames drawn over the interval
     private float m_time_left; // Left time for current interval
     private float m_result;
+    private Text textComponent;
 
     void Start()
     {
         m_time_left = m_update_interval;
         m_last_time = Time.realtimeSinceStartup;
+        textComponent = GetComponent<Text>();
     }
 
     void Update()
@@ -30,7 +33,7 @@ public class FrameRateCounter : MonoBehaviour
         if (m_time_left <= 0.0)
         {
             m_result = m_accum / m_frames;
-            GetComponent<GUIText>().text = m_result.ToString("f2");
+            textComponent.text = m_result.ToString("f2");
             m_time_left = m_update_interval;
             m_accum = 0.0f;
             m_frames = 0;

@@ -17,6 +17,10 @@
 *.opendb
 
 GFSDK_HairWorks.win64.dll*
+GFSDK_HairWorks.win32.dll*
+GFSDK_HairWorks.h*
+GFSDK_HairWorks_Common.h*
+GFSDK_HairWorks_ShaderCommon.h*
 HairWorksIntegration/*.sln
 HairWorksIntegration/*.csproj
 

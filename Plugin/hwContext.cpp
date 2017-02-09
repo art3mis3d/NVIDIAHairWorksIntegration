@@ -8,6 +8,7 @@
     #define hwSDKDLL "GFSDK_HairWorks.win64.dll"
 #endif
 
+//New version!
 
 bool operator==(const hwConversionSettings &a, const hwConversionSettings &b)
 {
@@ -473,11 +474,26 @@ void hwContext::instanceSetTexture(hwHInstance hi, hwTextureType type, hwTexture
     if (hi >= m_instances.size()) { return; }
     auto &v = m_instances[hi];
 
-    auto *srv = getSRV(tex);
+	D3D11_TEXTURE2D_DESC texDesc;
+	tex->GetDesc(&texDesc);
+	ID3D11ShaderResourceView* srv = 0;
+	D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc;
+	ZeroMemory(&SRVDesc, sizeof(SRVDesc));
+	SRVDesc.Format = texDesc.Format;
+	SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	SRVDesc.Texture2D.MostDetailedMip = 0;
+	SRVDesc.Texture2D.MipLevels = texDesc.MipLevels;
+	m_d3ddev->CreateShaderResourceView(tex, &SRVDesc, &srv);
+
     if (!srv || g_hw_sdk->SetTextureSRV(v.iid, type, srv) != GFSDK_HAIR_RETURN_OK)
     {
         hwLog("GFSDK_HairSDK::SetTextureSRV(%d, %d) failed.\n", hi, type);
     }
+
+	if (srv) {
+		srv->Release(); 
+		srv = NULL;
+	}
 }
 
 void hwContext::instanceUpdateSkinningMatrices(hwHInstance hi, int num_bones, hwMatrix *matrices)
@@ -655,11 +671,54 @@ void hwContext::renderImpl(hwHInstance hi)
         m_d3dctx->PSSetConstantBuffers(0, 1, &m_rs_constant_buffer);
     }
 
+	// set sampler state
+	{
+		D3D11_SAMPLER_DESC samplerDesc;
+		samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+		samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+		samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+		samplerDesc.BorderColor[0] = 0;
+		samplerDesc.BorderColor[1] = 0;
+		samplerDesc.BorderColor[2] = 0;
+		samplerDesc.BorderColor[3] = 0;
+		samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+		samplerDesc.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+		samplerDesc.MaxAnisotropy = 1;
+		samplerDesc.MinLOD = 0;
+		samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+		samplerDesc.MipLODBias = 0;
+		ID3D11SamplerState* sampler = 0;
+		m_d3ddev->CreateSamplerState(&samplerDesc, &sampler);
+		m_d3dctx->PSSetSamplers(0, 1, &sampler);
+
+		if (sampler) {
+			sampler->Release(); 
+			sampler = NULL;
+		}
+	}
+
     // set shader resource views
     {
         ID3D11ShaderResourceView* SRVs[GFSDK_HAIR_NUM_SHADER_RESOUCES];
         g_hw_sdk->GetShaderResources(v.iid, SRVs);
         m_d3dctx->PSSetShaderResources(0, GFSDK_HAIR_NUM_SHADER_RESOUCES, SRVs);
+
+		ID3D11ShaderResourceView* ppTextureSRVs[3];
+
+		if (g_hw_sdk->GetTextureSRV(v.iid, GFSDK_HAIR_TEXTURE_ROOT_COLOR, &ppTextureSRVs[0]) == GFSDK_HAIR_RETURN_OK) {
+			if (ppTextureSRVs[0])
+				m_d3dctx->PSSetShaderResources(3, 1, &ppTextureSRVs[0]);
+		}
+
+		if (g_hw_sdk->GetTextureSRV(v.iid, GFSDK_HAIR_TEXTURE_TIP_COLOR, &ppTextureSRVs[1]) == GFSDK_HAIR_RETURN_OK) {
+			if (ppTextureSRVs[1])
+				m_d3dctx->PSSetShaderResources(4, 1, &ppTextureSRVs[1]);
+		}
+
+		if (g_hw_sdk->GetTextureSRV(v.iid, GFSDK_HAIR_TEXTURE_SPECULAR, &ppTextureSRVs[2]) == GFSDK_HAIR_RETURN_OK) {
+			if (ppTextureSRVs[2])
+				m_d3dctx->PSSetShaderResources(5, 1, &ppTextureSRVs[2]);
+		}
     }
 
     // render
@@ -702,16 +761,20 @@ void hwContext::stepSimulationImpl(float dt)
 
 void hwContext::flush()
 {
-    {
-        std::unique_lock<std::mutex> lock(m_mutex);
-        m_commands_back = m_commands;
-        m_commands.clear();
-    }
+	{
+		std::unique_lock<std::mutex> lock(m_mutex);
+		m_commands_back = m_commands;
+		m_commands.clear();
+	}
+	
+	m_d3ddev->GetImmediateContext(&m_d3dctx);
 
-    m_d3dctx->OMSetDepthStencilState(m_rs_enable_depth, 0);
+	m_d3dctx->OMSetDepthStencilState(m_rs_enable_depth, 0);
+	m_mutex.lock();
     for (auto& c : m_commands_back) {
         c();
     }
+	m_mutex.unlock();
     m_commands_back.clear();
 }
 

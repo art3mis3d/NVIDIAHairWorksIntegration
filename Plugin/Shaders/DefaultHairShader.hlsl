@@ -19,6 +19,7 @@ GFSDK_HAIR_DECLARE_SHADER_RESOURCES(t0, t1, t2);
 
 Texture2D	g_rootHairColorTexture	: register(t3);
 Texture2D	g_tipHairColorTexture	: register(t4);
+Texture2D   g_specularTexture       : register(t5);
 
 cbuffer cbPerFrame : register(b0)
 {
@@ -52,13 +53,16 @@ float4 ps_main(GFSDK_Hair_PixelShaderInput input) : SV_Target
     GFSDK_Hair_ShaderAttributes attr = GFSDK_Hair_GetShaderAttributes(input, g_hairConstantBuffer);
     GFSDK_Hair_Material mat = g_hairConstantBuffer.defaultMaterial;
 
-    float4 r = mat.rootColor;
+	if (g_hairConstantBuffer.useSpecularTexture)
+		mat.specularColor.rgb = g_specularTexture.SampleLevel(texSampler, attr.texcoords.xy, 0).rgb;
+
+	float4 r = float4 (0, 0, 0, 1);
 
     if (GFSDK_Hair_VisualizeColor(g_hairConstantBuffer, mat, attr, r.rgb)) {
         return r;
     }
 
-    float3 hairColor = GFSDK_Hair_SampleHairColorTex(g_hairConstantBuffer, mat, texSampler, g_rootHairColorTexture, g_tipHairColorTexture, attr.texcoords);
+    float3 hairColor = GFSDK_Hair_SampleHairColorTex(g_hairConstantBuffer, mat, texSampler, g_rootHairColorTexture, g_tipHairColorTexture, attr.texcoords.xyz).rgb;
 
     for (int i = 0; i < g_numLights.x; i++)
     {
@@ -74,7 +78,13 @@ float4 ps_main(GFSDK_Hair_PixelShaderInput input) : SV_Target
             Ldir = normalize(diff);
             atten = max(1.0f - dot(diff, diff) / (range*range), 0.0);
         }
-        r.rgb += GFSDK_Hair_ComputeHairShading(Lcolor, Ldir, attr, mat, hairColor) * atten;
+
+		float diffuse = GFSDK_Hair_ComputeHairDiffuseShading(Ldir, attr.T, attr.N, mat.diffuseScale, mat.diffuseBlend);
+		float specular = GFSDK_Hair_ComputeHairSpecularShading(Ldir, attr, mat);
+		float glint = GFSDK_Hair_ComputeHairGlint(g_hairConstantBuffer, mat, attr);
+		specular *= lerp(1.0, glint, mat.glintStrength);
+		r.a = GFSDK_Hair_ComputeAlpha(g_hairConstantBuffer, mat, attr);
+		r.rgb += ((hairColor  * diffuse) + (specular * mat.specularColor)) * Lcolor * atten;
     }
     //r.rgb = saturate(attr.N.xyz)*0.5+0.5;
     return r;
