@@ -61,6 +61,16 @@ struct hwLightData
 
 struct hwConstantBuffer
 {
+	//Spherical Harmonics
+	hwFloat4 shAr;
+	hwFloat4 shAg;
+	hwFloat4 shAb;
+	hwFloat4 shBr;
+	hwFloat4 shBg;
+	hwFloat4 shBb;
+	hwFloat4 shC;
+
+	//Normal Constant Buffer
     int num_lights; int pad0[3];
     hwLightData lights[hwMaxLights];
     GFSDK_HairShaderConstantBuffer hw;
@@ -115,6 +125,7 @@ public:
     void setRenderTarget(hwTexture *framebuffer, hwTexture *depthbuffer);
     void setShader(hwHShader hs);
     void setLights(int num_lights, const hwLightData *lights);
+	void setSphericalHarmonics(const hwFloat4 &Ar, const hwFloat4 &Ag, const hwFloat4 &Ab, const hwFloat4 &Br, const hwFloat4 &Bg, const hwFloat4 &Bb, const hwFloat4 &C);
     void render(hwHInstance hi);
     void renderShadow(hwHInstance hi);
     void stepSimulation(float dt);
@@ -131,6 +142,7 @@ private:
     void setRenderTargetImpl(hwTexture *framebuffer, hwTexture *depthbuffer);
     void setShaderImpl(hwHShader hs);
     void setLightsImpl(int num_lights, const hwLightData *lights);
+	void setSphericalHarmonicsImpl(const hwFloat4 &Ar, const hwFloat4 &Ag, const hwFloat4 &Ab, const hwFloat4 &Br, const hwFloat4 &Bg, const hwFloat4 &Bb, const hwFloat4 &C);
     void renderImpl(hwHInstance hi);
     void renderShadowImpl(hwHInstance hi);
     void stepSimulationImpl(float dt);

@@ -379,6 +379,13 @@ hwExport void hwSetLights(int num_lights, const hwLightData *lights)
     }
 }
 
+hwExport void hwSetSphericalHarmonics(const hwFloat4 *Ar, const hwFloat4 *Ag, const hwFloat4 *Ab, const hwFloat4 *Br, const hwFloat4 *Bg, const hwFloat4 *Bb, const hwFloat4 *C)
+{
+	if (auto ctx = hwGetContext()) {
+		ctx->setSphericalHarmonics(*Ar, *Ag, *Ab, *Br, *Bg, *Bb, *C);
+	}
+}
+
 hwExport void hwRender(hwHInstance iid)
 {
     if (auto ctx = hwGetContext()) {

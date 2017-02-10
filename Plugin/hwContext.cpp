@@ -568,6 +568,13 @@ void hwContext::setLights(int num_lights, const hwLightData *lights_)
 
 }
 
+void hwContext::setSphericalHarmonics(const hwFloat4 &Ar, const hwFloat4 &Ag, const hwFloat4 &Ab, const hwFloat4 &Br, const hwFloat4 &Bg, const hwFloat4 &Bb, const hwFloat4 &C)
+{
+	pushDeferredCall([=]() {
+		setSphericalHarmonicsImpl(Ar, Ag, Ab, Br, Bg, Bb, C);
+	});
+}
+
 void hwContext::render(hwHInstance hi)
 {
     pushDeferredCall([=]() {
@@ -652,6 +659,18 @@ void hwContext::setLightsImpl(int num_lights, const hwLightData *lights)
 {
     m_cb.num_lights = num_lights;
     std::copy(lights, lights + num_lights, m_cb.lights);
+}
+
+void hwContext::setSphericalHarmonicsImpl(const hwFloat4 &Ar, const hwFloat4 &Ag, const hwFloat4 &Ab, const hwFloat4 &Br, const hwFloat4 &Bg, const hwFloat4 &Bb, const hwFloat4 &C)
+{
+	m_cb.shAr = Ar;
+	m_cb.shAg = Ag;
+	m_cb.shAb = Ab;
+	m_cb.shBr = Br;
+	m_cb.shBg = Bg;
+	m_cb.shBb = Bb;
+	m_cb.shC = C;
+
 }
 
 void hwContext::renderImpl(hwHInstance hi)

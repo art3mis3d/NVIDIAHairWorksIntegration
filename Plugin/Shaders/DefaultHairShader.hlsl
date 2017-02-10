@@ -23,6 +23,13 @@ Texture2D   g_specularTexture       : register(t5);
 
 cbuffer cbPerFrame : register(b0)
 {
+	float4 shAr;
+	float4 shAg;
+	float4 shAb;
+	float4 shBr;
+	float4 shBg;
+	float4 shBb;
+	float4 shC;
     int4                        g_numLights;        // x: num lights
     LightData                   g_lights[MaxLights];
     GFSDK_Hair_ConstantBuffer   g_hairConstantBuffer;
@@ -46,6 +53,29 @@ cbuffer UnityPerDraw
 
 SamplerState texSampler: register(s0);
 
+
+inline float3 ShadeSH9(float4 Ar, float4 Ag, float4 Ab, float4 Br, float4 Bg, float4 Bb, float4 C, float4 normal)
+{
+	float3 x1, x2, x3;
+
+	x1.r = dot(Ar, normal);
+	x1.g = dot(Ag, normal);
+	x1.b = dot(Ab, normal);
+
+	float4 vB = normal.xyzz * normal.yzzx;
+
+	x2.r = dot(Br, vB);
+	x2.g = dot(Bg, vB);
+	x2.b = dot(Bb, vB);
+
+	float vC = normal.x*normal.x - normal.y*normal.y;
+
+	x3 = C.rgb * vC;
+
+	if (shC.w == 1)
+		return x1 + x2 + x3;
+	else return float3 (0, 0, 0);
+}
 
 [earlydepthstencil]
 float4 ps_main(GFSDK_Hair_PixelShaderInput input) : SV_Target
@@ -81,12 +111,23 @@ float4 ps_main(GFSDK_Hair_PixelShaderInput input) : SV_Target
 
 		float diffuse = GFSDK_Hair_ComputeHairDiffuseShading(Ldir, attr.T, attr.N, mat.diffuseScale, mat.diffuseBlend);
 		float specular = GFSDK_Hair_ComputeHairSpecularShading(Ldir, attr, mat);
-		float glint = GFSDK_Hair_ComputeHairGlint(g_hairConstantBuffer, mat, attr);
-		specular *= lerp(1.0, glint, mat.glintStrength);
+
+		float GlintAmbient = 0;
+
+		if (mat.glintStrength > 0)
+		{
+			float glint = GFSDK_Hair_ComputeHairGlint(g_hairConstantBuffer, mat, attr);
+			specular *= lerp(1.0, glint, mat.glintStrength);
+
+			float Luminance = dot(Lcolor, float3(0.3, 0.5, 0.2));	// Copied from HairWorks viewer.
+			GlintAmbient = mat.glintStrength * glint * Luminance;
+		}
+
 		r.a = GFSDK_Hair_ComputeAlpha(g_hairConstantBuffer, mat, attr);
-		r.rgb += ((hairColor  * diffuse) + (specular * mat.specularColor)) * Lcolor * atten;
+		r.rgb += ((hairColor  * diffuse) + (specular * mat.specularColor)) * Lcolor * atten + GlintAmbient * atten * hairColor;
     }
     //r.rgb = saturate(attr.N.xyz)*0.5+0.5;
+	r.rgb += (hairColor * ShadeSH9(shAr, shAg, shAb, shBr, shBg, shBb, shC, float4(attr.N, 1)));
     return r;
 }
 
