@@ -47,6 +47,18 @@ namespace UTJ
         }
         #endregion
 
+        struct ShadowParams
+        {
+           public Matrix4x4 worldToShadow0;
+           public Matrix4x4 worldToShadow1;
+           public Matrix4x4 worldToShadow2;
+           public Matrix4x4 worldToShadow3;
+           public Vector4 shadowSplitSpheres0;
+           public Vector4 shadowSplitSpheres1;
+           public Vector4 shadowSplitSpheres2;
+           public Vector4 shadowSplitSpheres3;
+           public Vector4 shadowSplitSqRadii;
+        };
 
         public enum Type
         {
@@ -61,18 +73,66 @@ namespace UTJ
         public float m_range = 10.0f;
         public Color m_color = Color.white;
         public float m_intensity = 1.0f;
+        public int m_angle = 180;
         CommandBuffer m_cb;
+        public bool debug;
+
+        public RenderTexture m_ShadowmapCopy;
+        Material m_CopyShadowParamsMaterial;
+        ComputeBuffer m_ShadowParamsCB;
+        CommandBuffer m_BufGrabShadowParams;
+        ShadowParams[] paramsTest = new ShadowParams[1];
 
         public CommandBuffer GetCommandBuffer()
         {
             if (m_cb == null)
             {
+                RenderTargetIdentifier shadowmap = BuiltinRenderTextureType.CurrentActive;
+                m_ShadowmapCopy = new RenderTexture(1024, 1024, 0);
+
                 m_cb = new CommandBuffer();
                 m_cb.name = "Hair Shadow";
+
+                m_cb.SetShadowSamplingMode(shadowmap, ShadowSamplingMode.RawDepth);
+
+                m_cb.Blit(shadowmap, new RenderTargetIdentifier(m_ShadowmapCopy));
+
                 GetComponent<Light>().AddCommandBuffer(LightEvent.AfterShadowMap, m_cb);
             }
             return m_cb;
         }
+
+        public void GetShadowParams()
+        {
+            if (m_BufGrabShadowParams != null)
+                m_BufGrabShadowParams.Clear();
+
+            Graphics.SetRandomWriteTarget(1, m_ShadowParamsCB, true);
+            m_CopyShadowParamsMaterial.SetBuffer("_ShadowParams", m_ShadowParamsCB);
+            m_BufGrabShadowParams.DrawProcedural(Matrix4x4.identity, m_CopyShadowParamsMaterial, 0, MeshTopology.Points, 1);
+            Graphics.ExecuteCommandBuffer(m_BufGrabShadowParams);
+
+            if (debug)
+            {
+                float[] values = new float[84];
+
+                m_ShadowParamsCB.GetData(values);
+
+                Debug.Log(values[1]);
+
+                debug = false;
+            }
+        }
+
+        public IntPtr GetShadowMapPointer()
+        {
+            return m_ShadowmapCopy.GetNativeTexturePtr();
+        }
+
+        /*public IntPtr GetShadowParamsPointer()
+        {
+            return m_ShadowParamsCB.get
+        }*/
 
         public hwi.LightData GetLightData()
         {
@@ -82,6 +142,7 @@ namespace UTJ
             m_data.color = new Color(m_color.r * m_intensity, m_color.g * m_intensity, m_color.b * m_intensity, 0.0f);
             m_data.position = t.position;
             m_data.direction = t.forward;
+            m_data.angle = m_angle;
             return m_data;
 
         }
@@ -90,15 +151,25 @@ namespace UTJ
         void OnEnable()
         {
             GetInstances().Add(this);
+
             if (GetInstances().Count > hwi.LightData.MaxLights)
             {
                 Debug.LogWarning("Max HairLight is " + hwi.LightData.MaxLights + ". Current active HairLight is " + GetInstances().Count);
             }
+
+            m_CopyShadowParamsMaterial = new Material(Shader.Find("Hidden/CopyShadowParams"));
+
+            m_ShadowParamsCB = new ComputeBuffer(1, 336);
+            m_BufGrabShadowParams = new CommandBuffer();
+            m_BufGrabShadowParams.name = "Grab shadow params";
+
+            GetCommandBuffer();
         }
 
         void OnDisable()
         {
             GetInstances().Remove(this);
+            m_ShadowParamsCB.Release();
         }
 
         void Update()
@@ -110,7 +181,10 @@ namespace UTJ
                 m_range = l.range;
                 m_color = l.color;
                 m_intensity = l.intensity;
+                m_angle = (int)l.spotAngle;
             }
+
+            GetShadowParams();
         }
 
     }

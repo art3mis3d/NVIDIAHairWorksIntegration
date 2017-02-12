@@ -89,6 +89,9 @@ namespace UTJ
         private Dictionary<hwi.TextureType, Texture2D> textureDictionary = new Dictionary<hwi.TextureType, Texture2D>();
         private List<Texture2D> textures = new List<Texture2D>();
         private Vector4[] avCoeff = new Vector4[7];
+        private ReflectionProbe[] reflectionProbes;
+        private Texture reflectionTex;
+        private RenderTexture blendedReflection;
 
         void RepaintWindow()
         {
@@ -329,6 +332,44 @@ namespace UTJ
             }
     }
 
+        void GetReflectionProbeData()
+        {
+            if (reflectionProbes.Length <= 0)
+                return;
+
+
+            if (reflectionProbes.Length > 1)
+            {
+                float[] distances = new float[reflectionProbes.Length];
+                float[] sortedDistances = new float[distances.Length];
+
+                for (int i = 0; i < distances.Length; i++)
+                {
+                    distances[i] = Vector3.Distance(this.transform.position, reflectionProbes[i].transform.position);
+                }
+
+                Array.Copy(distances, sortedDistances, distances.Length);
+
+                Array.Sort(sortedDistances);
+
+                ReflectionProbe probe1 = reflectionProbes[Array.IndexOf(distances, sortedDistances[0])];
+
+                ReflectionProbe probe2 = reflectionProbes[Array.IndexOf(distances, sortedDistances[1])];
+
+                blendedReflection = new RenderTexture(probe1.bakedTexture.width, probe1.bakedTexture.height, 0, RenderTextureFormat.ARGBHalf);
+                blendedReflection.dimension = TextureDimension.Cube;
+                blendedReflection.useMipMap = true;
+
+                ReflectionProbe.BlendCubemap(probe1.bakedTexture, probe2.bakedTexture, 0.5f * (1 / (sortedDistances[1] / (sortedDistances[0] + 0.01f))), blendedReflection);
+
+                reflectionTex = blendedReflection;
+            }
+            else
+            {
+                reflectionTex = reflectionProbes[0].bakedTexture;
+            }
+        }
+
 
 #if UNITY_EDITOR
         void Reset()
@@ -381,6 +422,7 @@ namespace UTJ
         {
             GetInstances().Add(this);
             m_params.m_enable = true;
+            reflectionProbes = FindObjectsOfType<ReflectionProbe>();
         }
 
         void OnDisable()
@@ -424,6 +466,7 @@ namespace UTJ
                 hwi.hwStepSimulation(Time.deltaTime);
                 UpdateLightProbes();
                 hwi.hwSetSphericalHarmonics(ref avCoeff[0], ref avCoeff[1], ref avCoeff[2], ref avCoeff[3], ref avCoeff[4], ref avCoeff[5], ref avCoeff[6]);
+                GetReflectionProbeData();
             }
         }
 

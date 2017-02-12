@@ -40,6 +40,7 @@ struct hwInstanceData
 
 enum hwELightType
 {
+	hwELightType_Spot,
     hwELightType_Directional,
     hwELightType_Point,
 };
@@ -50,12 +51,14 @@ struct hwLightData
     hwFloat4 position; // w: range
     hwFloat4 direction;
     hwFloat4 color;
+	int angle; int pad2[3];
 
     hwLightData()
         : type(hwELightType_Directional)
         , position({ 0.0f, 0.0f, 0.0f, 0.0f })
         , direction({ 0.0f, 0.0f, 0.0f, 0.0f })
         , color({ 1.0f, 1.0f, 1.0f, 1.0 })
+		, angle(180)
     {}
 };
 

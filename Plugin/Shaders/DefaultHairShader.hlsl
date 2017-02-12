@@ -12,6 +12,7 @@ struct LightData
     float4 position;    // w: range
     float4 direction;
     float4 color;
+	int4 angle;
 };
 
 
@@ -97,16 +98,37 @@ float4 ps_main(GFSDK_Hair_PixelShaderInput input) : SV_Target
     for (int i = 0; i < g_numLights.x; i++)
     {
         float3 Lcolor = g_lights[i].color.rgb;
-        float3 Ldir;
+        float3 Ldir = float3(0,0,0);
         float atten = 1.0;
         if (g_lights[i].type.x == LightType_Directional) {
             Ldir = g_lights[i].direction.xyz;
         }
-        else if (g_lights[i].type.x == LightType_Point) {
+        else {
             float range = g_lights[i].position.w;
             float3 diff = g_lights[i].position.xyz - attr.P;
             Ldir = normalize(diff);
             atten = max(1.0f - dot(diff, diff) / (range*range), 0.0);
+
+			//Spot Light Attenuation
+			if (g_lights[i].type.x == LightType_Spot)
+			{
+				float spotEffect = dot(g_lights[i].direction.xyz, -Ldir);
+
+				// Outside spot cone
+				if ((spotEffect - 0.02) < cos(radians((uint)g_lights[i].angle.x / 2)))
+				{
+					float angleDif = cos(radians((uint)g_lights[i].angle.x / 2)) - (spotEffect - 0.02);
+
+					// Fade light smoothly near edge of cone
+					if (angleDif <= 0.02) {
+
+						atten = lerp(atten, 0, angleDif * 50);
+					}
+					// Kill light outside cone
+					else
+						atten = 0;
+				}
+			}
         }
 
 		float diffuse = GFSDK_Hair_ComputeHairDiffuseShading(Ldir, attr.T, attr.N, mat.diffuseScale, mat.diffuseBlend);
@@ -124,7 +146,7 @@ float4 ps_main(GFSDK_Hair_PixelShaderInput input) : SV_Target
 		}
 
 		r.a = GFSDK_Hair_ComputeAlpha(g_hairConstantBuffer, mat, attr);
-		r.rgb += ((hairColor  * diffuse) + (specular * mat.specularColor)) * Lcolor * atten + GlintAmbient * atten * hairColor;
+		r.rgb += ((hairColor.rgb  * diffuse) + (specular * mat.specularColor.rgb)) * Lcolor.rgb * atten + GlintAmbient * atten * hairColor.rgb;
     }
     //r.rgb = saturate(attr.N.xyz)*0.5+0.5;
 	r.rgb += (hairColor * ShadeSH9(shAr, shAg, shAb, shBr, shBg, shBb, shC, float4(attr.N, 1)));

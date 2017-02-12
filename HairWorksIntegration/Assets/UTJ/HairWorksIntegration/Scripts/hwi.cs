@@ -433,6 +433,8 @@ namespace UTJ
             public Vector3 direction;
             float pad4;
             public Color color;
+            public int angle;
+            int pad5, pad6, pad7;
         }
 
 
@@ -534,24 +536,7 @@ namespace UTJ
         [DllImport("HairWorksIntegration")] public static extern void       hwSetRenderTarget(IntPtr framebuffer, IntPtr depthbuffer);
         [DllImport("HairWorksIntegration")] public static extern void       hwSetShader(HShader sid);
         [DllImport("HairWorksIntegration")] public static extern void       hwSetLights(int num_lights, IntPtr lights);
-        [DllImport("HairWorksIntegration")] public static extern void       
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            hwSetSphericalHarmonics(ref Vector4 Ar, ref Vector4 Ag, ref Vector4 Ab, ref Vector4 Br, ref Vector4 Bg, ref Vector4 Bb, ref Vector4 C);
+        [DllImport("HairWorksIntegration")] public static extern void       hwSetSphericalHarmonics(ref Vector4 Ar, ref Vector4 Ag, ref Vector4 Ab, ref Vector4 Br, ref Vector4 Bg, ref Vector4 Bb, ref Vector4 C);
         [DllImport("HairWorksIntegration")] public static extern void       hwRender(HInstance iid);
         [DllImport("HairWorksIntegration")] public static extern void       hwRenderShadow(HInstance iid);
         [DllImport("HairWorksIntegration")] public static extern void       hwStepSimulation(float dt);
