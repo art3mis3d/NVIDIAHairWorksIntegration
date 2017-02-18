@@ -148,6 +148,18 @@ void hwContext::finalize()
     for (auto &i : m_rtvtable) { i.second->Release(); }
     m_rtvtable.clear();
 
+	if (reflectionSRV1)
+		reflectionSRV1->Release();
+
+	if (reflectionSRV2)
+		reflectionSRV2->Release();
+
+	if (reflectionTexture1)
+		reflectionTexture1->Release();
+
+	if (reflectionTexture2)
+		reflectionTexture2->Release();
+
     if (m_rs_enable_depth) {
         m_rs_enable_depth->Release();
         m_rs_enable_depth = nullptr;
@@ -474,6 +486,31 @@ void hwContext::instanceSetTexture(hwHInstance hi, hwTextureType type, hwTexture
     if (hi >= m_instances.size()) { return; }
     auto &v = m_instances[hi];
 
+	if (!tex)
+	{
+		ID3D11ShaderResourceView* oldSRV = nullptr;
+
+		if (g_hw_sdk->GetTextureSRV(v.iid, type, &oldSRV) != GFSDK_HAIR_RETURN_OK)
+		{
+			hwLog("GFSDK_HairSDK::GetTextureSRV(%d, %d) failed.\n", hi, type);
+		}
+		else
+		{
+			if (oldSRV)
+			{
+				oldSRV->Release();
+				oldSRV = nullptr;
+			}
+		}
+
+		if (g_hw_sdk->SetTextureSRV(v.iid, type, nullptr) != GFSDK_HAIR_RETURN_OK)
+		{
+			hwLog("GFSDK_HairSDK::SetTextureSRV(%d, %d) failed.\n", hi, type);
+		}
+
+		return;
+	}
+
 	D3D11_TEXTURE2D_DESC texDesc;
 	tex->GetDesc(&texDesc);
 	ID3D11ShaderResourceView* srv = 0;
@@ -575,6 +612,20 @@ void hwContext::setSphericalHarmonics(const hwFloat4 &Ar, const hwFloat4 &Ag, co
 	});
 }
 
+void hwContext::setGIParameters(const hwFloat4 &Params)
+{
+	pushDeferredCall([=]() {
+		setGIParametersImpl(Params);
+	});
+}
+
+void hwContext::setReflectionProbe(ID3D11Resource *tex1, ID3D11Resource *tex2)
+{
+	pushDeferredCall([=]() {
+		setReflectionProbeImpl(tex1, tex2);
+	});
+}
+
 void hwContext::render(hwHInstance hi)
 {
     pushDeferredCall([=]() {
@@ -673,6 +724,65 @@ void hwContext::setSphericalHarmonicsImpl(const hwFloat4 &Ar, const hwFloat4 &Ag
 
 }
 
+void hwContext::setGIParametersImpl(const hwFloat4 &Params)
+{
+	m_cb.gi_params = Params;
+}
+
+void hwContext::setReflectionProbeImpl(ID3D11Resource *tex1, ID3D11Resource *tex2)
+{
+	if (!tex1)
+	{
+		reflectionSRV1 = nullptr;
+		reflectionTexture1 = nullptr;
+		return;
+	}
+
+	if (!tex2)
+	{
+		reflectionSRV2 = nullptr;
+		reflectionTexture2 = nullptr;
+		return;
+	}
+
+	if (tex1 == reflectionTexture1 && tex2 == reflectionTexture2)
+		return;
+	
+	ID3D11Texture2D* cubemap1 = nullptr;
+	ID3D11Texture2D* cubemap2 = nullptr;
+
+	reflectionTexture1 = tex1;
+	reflectionTexture2 = tex2;
+
+	reflectionTexture1->QueryInterface(&cubemap1);
+	reflectionTexture2->QueryInterface(&cubemap2);
+
+	D3D11_TEXTURE2D_DESC texDesc1;
+	cubemap1->GetDesc(&texDesc1);
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc1;
+	ZeroMemory(&SRVDesc1, sizeof(SRVDesc1));
+
+	SRVDesc1.Format = texDesc1.Format;
+	SRVDesc1.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
+	SRVDesc1.Texture2D.MostDetailedMip = 0;
+	SRVDesc1.Texture2D.MipLevels = texDesc1.MipLevels;
+
+	D3D11_TEXTURE2D_DESC texDesc2;
+	cubemap2->GetDesc(&texDesc2);
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc2;
+	ZeroMemory(&SRVDesc2, sizeof(SRVDesc2));
+
+	SRVDesc2.Format = texDesc2.Format;
+	SRVDesc2.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
+	SRVDesc2.Texture2D.MostDetailedMip = 0;
+	SRVDesc2.Texture2D.MipLevels = texDesc2.MipLevels;
+
+	m_d3ddev->CreateShaderResourceView(cubemap1, &SRVDesc1, &reflectionSRV1);
+	m_d3ddev->CreateShaderResourceView(cubemap2, &SRVDesc2, &reflectionSRV2);
+}
+
 void hwContext::renderImpl(hwHInstance hi)
 {
     if (hi >= m_instances.size()) { return; }
@@ -701,7 +811,7 @@ void hwContext::renderImpl(hwHInstance hi)
 		samplerDesc.BorderColor[2] = 0;
 		samplerDesc.BorderColor[3] = 0;
 		samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-		samplerDesc.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+		samplerDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
 		samplerDesc.MaxAnisotropy = 1;
 		samplerDesc.MinLOD = 0;
 		samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
@@ -722,22 +832,34 @@ void hwContext::renderImpl(hwHInstance hi)
         g_hw_sdk->GetShaderResources(v.iid, SRVs);
         m_d3dctx->PSSetShaderResources(0, GFSDK_HAIR_NUM_SHADER_RESOUCES, SRVs);
 
-		ID3D11ShaderResourceView* ppTextureSRVs[3];
+		ID3D11ShaderResourceView* ppTextureSRVs[3] = {nullptr, nullptr, nullptr};
 
-		if (g_hw_sdk->GetTextureSRV(v.iid, GFSDK_HAIR_TEXTURE_ROOT_COLOR, &ppTextureSRVs[0]) == GFSDK_HAIR_RETURN_OK) {
-			if (ppTextureSRVs[0])
-				m_d3dctx->PSSetShaderResources(3, 1, &ppTextureSRVs[0]);
+		if (g_hw_sdk->GetTextureSRV(v.iid, GFSDK_HAIR_TEXTURE_ROOT_COLOR, &ppTextureSRVs[0]) != GFSDK_HAIR_RETURN_OK) {
+			
+			hwLog("GFSDK_HairSDK::GetTextureSRV(%d, %d) failed.\n", hi, GFSDK_HAIR_TEXTURE_ROOT_COLOR);
 		}
 
-		if (g_hw_sdk->GetTextureSRV(v.iid, GFSDK_HAIR_TEXTURE_TIP_COLOR, &ppTextureSRVs[1]) == GFSDK_HAIR_RETURN_OK) {
-			if (ppTextureSRVs[1])
-				m_d3dctx->PSSetShaderResources(4, 1, &ppTextureSRVs[1]);
+		m_d3dctx->PSSetShaderResources(3, 1, &ppTextureSRVs[0]);
+
+		if (g_hw_sdk->GetTextureSRV(v.iid, GFSDK_HAIR_TEXTURE_TIP_COLOR, &ppTextureSRVs[1]) != GFSDK_HAIR_RETURN_OK) {
+			
+			hwLog("GFSDK_HairSDK::GetTextureSRV(%d, %d) failed.\n", hi, GFSDK_HAIR_TEXTURE_TIP_COLOR);
 		}
 
-		if (g_hw_sdk->GetTextureSRV(v.iid, GFSDK_HAIR_TEXTURE_SPECULAR, &ppTextureSRVs[2]) == GFSDK_HAIR_RETURN_OK) {
-			if (ppTextureSRVs[2])
-				m_d3dctx->PSSetShaderResources(5, 1, &ppTextureSRVs[2]);
+		m_d3dctx->PSSetShaderResources(4, 1, &ppTextureSRVs[1]);
+
+		if (g_hw_sdk->GetTextureSRV(v.iid, GFSDK_HAIR_TEXTURE_SPECULAR, &ppTextureSRVs[2]) != GFSDK_HAIR_RETURN_OK) {
+			
+			hwLog("GFSDK_HairSDK::GetTextureSRV(%d, %d) failed.\n", hi, GFSDK_HAIR_TEXTURE_SPECULAR);
 		}
+
+		m_d3dctx->PSSetShaderResources(5, 1, &ppTextureSRVs[2]);
+
+		// set reflection probe
+		m_d3dctx->PSSetShaderResources(6, 1, &reflectionSRV1);
+
+		m_d3dctx->PSSetShaderResources(7, 1, &reflectionSRV2);
+		
     }
 
     // render
@@ -785,15 +907,11 @@ void hwContext::flush()
 		m_commands_back = m_commands;
 		m_commands.clear();
 	}
-	
-	m_d3ddev->GetImmediateContext(&m_d3dctx);
 
 	m_d3dctx->OMSetDepthStencilState(m_rs_enable_depth, 0);
-	m_mutex.lock();
     for (auto& c : m_commands_back) {
         c();
     }
-	m_mutex.unlock();
     m_commands_back.clear();
 }
 

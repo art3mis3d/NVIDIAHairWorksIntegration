@@ -73,6 +73,9 @@ struct hwConstantBuffer
 	hwFloat4 shBb;
 	hwFloat4 shC;
 
+	//GI Parameters
+	hwFloat4 gi_params;
+
 	//Normal Constant Buffer
     int num_lights; int pad0[3];
     hwLightData lights[hwMaxLights];
@@ -129,6 +132,8 @@ public:
     void setShader(hwHShader hs);
     void setLights(int num_lights, const hwLightData *lights);
 	void setSphericalHarmonics(const hwFloat4 &Ar, const hwFloat4 &Ag, const hwFloat4 &Ab, const hwFloat4 &Br, const hwFloat4 &Bg, const hwFloat4 &Bb, const hwFloat4 &C);
+	void setGIParameters(const hwFloat4 &Params);
+	void setReflectionProbe(ID3D11Resource *tex1, ID3D11Resource *tex2);
     void render(hwHInstance hi);
     void renderShadow(hwHInstance hi);
     void stepSimulation(float dt);
@@ -146,6 +151,8 @@ private:
     void setShaderImpl(hwHShader hs);
     void setLightsImpl(int num_lights, const hwLightData *lights);
 	void setSphericalHarmonicsImpl(const hwFloat4 &Ar, const hwFloat4 &Ag, const hwFloat4 &Ab, const hwFloat4 &Br, const hwFloat4 &Bg, const hwFloat4 &Bb, const hwFloat4 &C);
+	void setGIParametersImpl(const hwFloat4 &Params);
+	void setReflectionProbeImpl(ID3D11Resource *tex1, ID3D11Resource *tex2);
     void renderImpl(hwHInstance hi);
     void renderShadowImpl(hwHInstance hi);
     void stepSimulationImpl(float dt);
@@ -176,4 +183,11 @@ private:
     ID3D11Buffer            *m_rs_constant_buffer = nullptr;
 
     hwConstantBuffer        m_cb;
+
+	ID3D11Resource *reflectionTexture1 = nullptr;
+	ID3D11Resource *reflectionTexture2 = nullptr;
+
+	
+	ID3D11ShaderResourceView* reflectionSRV1 = nullptr;
+	ID3D11ShaderResourceView* reflectionSRV2 = nullptr;
 };

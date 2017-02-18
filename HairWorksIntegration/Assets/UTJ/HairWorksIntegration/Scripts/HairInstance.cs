@@ -46,8 +46,8 @@ namespace UTJ
 
         public Transform[] m_bones;
         Matrix4x4[] m_inv_bindpose;
-        Matrix4x4[] m_skinning_matrices;
-        IntPtr m_skinning_matrices_ptr;
+        Matrix4x4[] m_skinning_matrices = null;
+        IntPtr m_skinning_matrices_ptr = IntPtr.Zero;
         Matrix4x4 m_conversion_matrix;
 
         public Mesh m_probe_mesh;
@@ -56,6 +56,21 @@ namespace UTJ
         public uint shader_id { get { return m_hshader; } }
         public uint asset_id { get { return m_hasset; } }
         public uint instance_id { get { return m_hinstance; } }
+
+        [HideInInspector]
+        public bool useLightProbes = true;
+
+        [HideInInspector]
+        public bool useReflectionProbes = true;
+
+        [HideInInspector]
+        public float lightProbeIntensity = 1;
+
+        [HideInInspector]
+        public float reflectionProbeIntensity = 1;
+
+        [HideInInspector]
+        public float reflectionProbeSpecularity = 1;
 
         [HideInInspector]
         public Texture2D root;
@@ -87,11 +102,12 @@ namespace UTJ
         public Texture2D weights;
 
         private Dictionary<hwi.TextureType, Texture2D> textureDictionary = new Dictionary<hwi.TextureType, Texture2D>();
+        private Dictionary<ReflectionProbe, IntPtr> probePointers = new Dictionary<ReflectionProbe, IntPtr>();
         private List<Texture2D> textures = new List<Texture2D>();
         private Vector4[] avCoeff = new Vector4[7];
         private ReflectionProbe[] reflectionProbes;
-        private Texture reflectionTex;
-        private RenderTexture blendedReflection;
+        private List<ReflectionProbe> probeInstances;
+        private float probeBlendAmount;
 
         void RepaintWindow()
         {
@@ -180,7 +196,10 @@ namespace UTJ
         public void AssignTexture(hwi.TextureType type, Texture2D tex)
         {
             if (tex == null)
+            {
+                hwi.hwInstanceSetTexture(m_hinstance, type, IntPtr.Zero);
                 return;
+            }
 
             hwi.hwInstanceSetTexture(m_hinstance, type, tex.GetNativeTexturePtr());
         }
@@ -200,6 +219,9 @@ namespace UTJ
         public void UpdateBones()
         {
             int num_bones = hwi.hwAssetGetNumBones(m_hasset);
+
+            if (num_bones == 0)
+                return;
 
             if (m_bones == null || m_bones.Length != num_bones)
             {
@@ -231,26 +253,26 @@ namespace UTJ
                     m_skinning_matrices[i] = Matrix4x4.identity;
                 }
 
-                for (int i = 0; i < num_bones; ++i)
-                {
-                    hwi.hwAssetGetBindPose(m_hasset, i, ref m_inv_bindpose[i]);
-                    m_inv_bindpose[i] = m_inv_bindpose[i].inverse;
-                }
-
                 m_conversion_matrix = Matrix4x4.identity;
                 if (m_invert_bone_x)
                 {
                     m_conversion_matrix *= Matrix4x4.Scale(new Vector3(-1.0f, 1.0f, 1.0f));
                 }
+
+                // m_conversion_matrix is constant, optimize by premultiplying with m_inv_bindpose
+                for (int i = 0; i < num_bones; ++i)
+                {
+                    hwi.hwAssetGetBindPose(m_hasset, i, ref m_inv_bindpose[i]);
+                    m_inv_bindpose[i] = m_conversion_matrix * m_inv_bindpose[i].inverse;
+                }
             }
 
-
-            for (int i = 0; i < m_bones.Length; ++i)
+            for (int i = 0; i < num_bones; ++i)
             {
                 var t = m_bones[i];
                 if (t != null)
                 {
-                    m_skinning_matrices[i] = t.localToWorldMatrix * m_conversion_matrix * m_inv_bindpose[i];
+                    m_skinning_matrices[i] = t.localToWorldMatrix *  m_inv_bindpose[i];
                 }
             }
         }
@@ -298,7 +320,7 @@ namespace UTJ
 
         void UpdateLightProbes()
         {
-            if (LightmapSettings.lightProbes.count > 0)
+            if (LightmapSettings.lightProbes.count > 0 && useLightProbes)
             {
                 SphericalHarmonicsL2 aSample;    // SH sample consists of 27 floats   
                 LightProbes.GetInterpolatedProbe(this.transform.position, this.GetComponent<MeshRenderer>(), out aSample);
@@ -332,41 +354,174 @@ namespace UTJ
             }
     }
 
+        Texture GetProbeTexture(ReflectionProbe probe)
+        {
+            if (probe.customBakedTexture != null)
+                return probe.customBakedTexture;
+
+            if (probe.bakedTexture != null)
+                return probe.bakedTexture;
+
+            return null;
+        }
+
         void GetReflectionProbeData()
         {
-            if (reflectionProbes.Length <= 0)
-                return;
+            // Copy a List of all reflection probes in scene
+            probeInstances.Clear();
 
+            probeBlendAmount = 0;
+            float dist1;
+            float dist2;
 
-            if (reflectionProbes.Length > 1)
+            // remove inactive probes
+            for (int i = 0; i < reflectionProbes.Length; i++)
             {
-                float[] distances = new float[reflectionProbes.Length];
-                float[] sortedDistances = new float[distances.Length];
-
-                for (int i = 0; i < distances.Length; i++)
+                if (reflectionProbes[i] != null && reflectionProbes[i].enabled && reflectionProbes[i].gameObject.activeInHierarchy)
                 {
-                    distances[i] = Vector3.Distance(this.transform.position, reflectionProbes[i].transform.position);
+                    probeInstances.Add(reflectionProbes[i]);
+                }
+            }
+
+            // If no active reflection probes in scene then return
+            if (probeInstances.Count <= 0 || !useReflectionProbes)
+            {
+                hwi.hwSetReflectionProbe(IntPtr.Zero, IntPtr.Zero);
+                return;
+            }
+
+            if (probeInstances.Count == 1)
+            {
+                if (GetProbeTexture(probeInstances[0]) == null)
+                    return;
+                
+                    if (!probePointers.ContainsKey(probeInstances[0]))
+                        probePointers.Add(probeInstances[0], GetProbeTexture(probeInstances[0]).GetNativeTexturePtr());
+
+                    hwi.hwSetReflectionProbe(probePointers[probeInstances[0]], probePointers[probeInstances[0]]);
+                
+
+                return;
+            }
+
+            if (probeInstances.Count == 2)
+            {
+                if (GetProbeTexture(probeInstances[0]) == null || GetProbeTexture(probeInstances[1]) == null)
+                    return;
+
+                    if (!probePointers.ContainsKey(probeInstances[0]))
+                        probePointers.Add(probeInstances[0], GetProbeTexture(probeInstances[0]).GetNativeTexturePtr());
+
+                if (!probePointers.ContainsKey(probeInstances[1]))
+                    probePointers.Add(probeInstances[1], GetProbeTexture(probeInstances[1]).GetNativeTexturePtr());
+
+                dist1 = Vector3.Distance(transform.position, probeInstances[0].transform.position);
+                dist2 = Vector3.Distance(transform.position, probeInstances[1].transform.position);
+
+                if (dist2 > dist1)
+                {
+                    hwi.hwSetReflectionProbe(probePointers[probeInstances[0]], probePointers[probeInstances[1]]);
+                    probeBlendAmount = 0.5f * (1.0f / (dist2 / (dist1 + 0.01f)));
+                }
+                else
+                {
+                    hwi.hwSetReflectionProbe(probePointers[probeInstances[1]], probePointers[probeInstances[0]]);
+                    probeBlendAmount = 0.5f * (1.0f / (dist1 / (dist2 + 0.01f)));
                 }
 
-                Array.Copy(distances, sortedDistances, distances.Length);
+                return;
+            }
 
-                Array.Sort(sortedDistances);
+            // send closest two probes or two probes with highest importance
+           
+                float closestDistance1 = Mathf.Infinity;
+                float closestDistance2 = Mathf.Infinity;
 
-                ReflectionProbe probe1 = reflectionProbes[Array.IndexOf(distances, sortedDistances[0])];
+                float mostImportant1 = -Mathf.Infinity;
+                float mostImportant2 = -Mathf.Infinity;
 
-                ReflectionProbe probe2 = reflectionProbes[Array.IndexOf(distances, sortedDistances[1])];
+                int distanceIdx1 = -1;
+                int distanceIdx2 = -1;
 
-                blendedReflection = new RenderTexture(probe1.bakedTexture.width, probe1.bakedTexture.height, 0, RenderTextureFormat.ARGBHalf);
-                blendedReflection.dimension = TextureDimension.Cube;
-                blendedReflection.useMipMap = true;
+                int importanceIdx1 = -1;
+                int importanceIdx2 = -1;
 
-                ReflectionProbe.BlendCubemap(probe1.bakedTexture, probe2.bakedTexture, 0.5f * (1 / (sortedDistances[1] / (sortedDistances[0] + 0.01f))), blendedReflection);
+                // Get distances to hair and importance
+                for (int i = 0; i < probeInstances.Count; i++)
+                {
+                    float distance = Vector3.Distance(this.transform.position, probeInstances[i].transform.position);
+                    float importance = probeInstances[i].importance;
 
-                reflectionTex = blendedReflection;
+                    if (distance < closestDistance1)
+                    {
+                        closestDistance1 = distance;
+                        distanceIdx1 = i;
+                    }
+                    else
+                    {
+                        if (distance < closestDistance2)
+                        {
+                            closestDistance2 = distance;
+                            distanceIdx2 = i;
+                        }
+                    }
+
+                    if (mostImportant1 < importance)
+                    {
+                        mostImportant1 = importance;
+                        importanceIdx1 = i;
+                    }
+                    else
+                    {
+                        if (mostImportant2 < importance)
+                        {
+                            mostImportant2 = importance;
+                            importanceIdx2 = i;
+                        }
+                    }
+                }
+
+                // get 2 closest
+                ReflectionProbe probe1 = probeInstances[distanceIdx1];
+
+                ReflectionProbe probe2 = probeInstances[distanceIdx2];
+
+                if (GetProbeTexture(probe1) == null || GetProbeTexture(probe2) == null)
+                        return;
+
+            // if there are more important probes then switch to them
+            if (probe1.importance < probeInstances[importanceIdx1].importance)
+            {
+                probe1 = probeInstances[importanceIdx1];
+            }
+
+            if (probe2.importance < probeInstances[importanceIdx2].importance)
+            {
+                probe2 = probeInstances[importanceIdx2];
+            }
+
+                if (GetProbeTexture(probe1) == null || GetProbeTexture(probe2) == null)
+                    return;
+
+                if (!probePointers.ContainsKey(probe1))
+                    probePointers.Add(probe1, GetProbeTexture(probe1).GetNativeTexturePtr());
+
+                if (!probePointers.ContainsKey(probe2))
+                    probePointers.Add(probe2, GetProbeTexture(probe2).GetNativeTexturePtr());
+
+            dist1 = Vector3.Distance(transform.position, probe1.transform.position);
+            dist2 = Vector3.Distance(transform.position, probe2.transform.position);
+
+            //send probes
+            if (dist2 > dist1)
+            {
+                hwi.hwSetReflectionProbe(probePointers[probe1], probePointers[probe2]);
+                probeBlendAmount = 0.5f * (1.0f / (dist2 / (dist1 + 0.01f)));
             }
             else
             {
-                reflectionTex = reflectionProbes[0].bakedTexture;
+                hwi.hwSetReflectionProbe(probePointers[probe2], probePointers[probe1]);
+                probeBlendAmount = 0.5f * (1.0f / (dist1 / (dist2 + 0.01f)));
             }
         }
 
@@ -423,6 +578,7 @@ namespace UTJ
             GetInstances().Add(this);
             m_params.m_enable = true;
             reflectionProbes = FindObjectsOfType<ReflectionProbe>();
+            probeInstances = new List<ReflectionProbe>(reflectionProbes.Length);
         }
 
         void OnDisable()
@@ -441,9 +597,7 @@ namespace UTJ
         void Update()
         {
             if (!m_hasset) { return; }
-            UpdateBones();
-            hwi.hwInstanceSetDescriptor(m_hinstance, ref m_params);
-            hwi.hwInstanceUpdateSkinningMatrices(m_hinstance, m_skinning_matrices.Length, m_skinning_matrices_ptr);
+           
 
             if (m_probe_mesh != null)
             {
@@ -464,14 +618,24 @@ namespace UTJ
             if (s_nth_LateUpdate++ == 0)
             {
                 hwi.hwStepSimulation(Time.deltaTime);
-                UpdateLightProbes();
-                hwi.hwSetSphericalHarmonics(ref avCoeff[0], ref avCoeff[1], ref avCoeff[2], ref avCoeff[3], ref avCoeff[4], ref avCoeff[5], ref avCoeff[6]);
-                GetReflectionProbeData();
             }
         }
 
        void OnWillRenderObject()
         {
+            UpdateBones();
+            hwi.hwInstanceSetDescriptor(m_hinstance, ref m_params);
+
+            if (m_skinning_matrices != null)
+             hwi.hwInstanceUpdateSkinningMatrices(m_hinstance, m_skinning_matrices.Length, m_skinning_matrices_ptr);
+
+            GetReflectionProbeData();
+            UpdateLightProbes();
+            hwi.hwSetSphericalHarmonics(ref avCoeff[0], ref avCoeff[1], ref avCoeff[2], ref avCoeff[3], ref avCoeff[4], ref avCoeff[5], ref avCoeff[6]);
+
+            Vector4 giparams = new Vector4(lightProbeIntensity, reflectionProbeIntensity, reflectionProbeSpecularity, probeBlendAmount);
+            hwi.hwSetGIParameters(ref giparams);
+
             if (s_nth_OnWillRenderObject++ == 0)
             {
                 BeginRender();

@@ -8,6 +8,8 @@ namespace UTJ
     public class HairInstanceEditor : Editor
     {
         bool showTextures = false;
+        bool showRendering = false;
+    
 
         public override void OnInspectorGUI()
         {
@@ -53,6 +55,28 @@ namespace UTJ
             GUILayout.Space(10);
 
             DrawDefaultInspector();
+
+            GUILayout.Space(10);
+
+            showRendering = EditorGUILayout.Foldout(showRendering, "Rendering", EditorStyles.foldout);
+
+            if (showRendering)
+            {
+                t.useLightProbes = EditorGUILayout.Toggle("Use Light Probes", t.useLightProbes);
+
+                if (t.useLightProbes)
+                {
+                    t.lightProbeIntensity = EditorGUILayout.FloatField("Light Probe Intensity", t.lightProbeIntensity);
+                }
+
+                t.useReflectionProbes = EditorGUILayout.Toggle("Use Reflection Probes", t.useReflectionProbes);
+
+                if (t.useReflectionProbes)
+                {
+                    t.reflectionProbeIntensity = EditorGUILayout.FloatField("Reflection Probe Intensity", t.reflectionProbeIntensity);
+                    t.reflectionProbeSpecularity = EditorGUILayout.FloatField("Specular Strength", t.reflectionProbeSpecularity);
+                }
+            }
 
             GUILayout.Space(10);
 

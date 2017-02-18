@@ -386,6 +386,20 @@ hwExport void hwSetSphericalHarmonics(const hwFloat4 *Ar, const hwFloat4 *Ag, co
 	}
 }
 
+hwExport void hwSetReflectionProbe(ID3D11Resource *tex1, ID3D11Resource *tex2)
+{
+	if (auto ctx = hwGetContext()) {
+		ctx->setReflectionProbe(tex1, tex2);
+	}
+}
+
+hwExport void hwSetGIParameters(const hwFloat4 *Params)
+{
+	if (auto ctx = hwGetContext()) {
+		ctx->setGIParameters(*Params);
+	}
+}
+
 hwExport void hwRender(hwHInstance iid)
 {
     if (auto ctx = hwGetContext()) {

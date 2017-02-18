@@ -21,6 +21,8 @@ GFSDK_HAIR_DECLARE_SHADER_RESOURCES(t0, t1, t2);
 Texture2D	g_rootHairColorTexture	: register(t3);
 Texture2D	g_tipHairColorTexture	: register(t4);
 Texture2D   g_specularTexture       : register(t5);
+TextureCube g_reflectionProbe1		: register(t6);
+TextureCube g_reflectionProbe2		: register(t7);
 
 cbuffer cbPerFrame : register(b0)
 {
@@ -31,6 +33,7 @@ cbuffer cbPerFrame : register(b0)
 	float4 shBg;
 	float4 shBb;
 	float4 shC;
+	float4 gi_params;	//	x: light probe intensity y: reflection probe intensity z: specular strength  w: probe blend amount
     int4                        g_numLights;        // x: num lights
     LightData                   g_lights[MaxLights];
     GFSDK_Hair_ConstantBuffer   g_hairConstantBuffer;
@@ -78,6 +81,33 @@ inline float3 ShadeSH9(float4 Ar, float4 Ag, float4 Ab, float4 Br, float4 Bg, fl
 	else return float3 (0, 0, 0);
 }
 
+
+float GetSpecPowToMip(float3 specColor)
+{
+	float fSpecPow = dot(specColor, float3(0.2126f, 0.7152f, 0.0722f));
+
+
+	uint width1;
+	uint height1;
+
+	uint width2;
+	uint height2;
+
+	g_reflectionProbe1.GetDimensions(width1, height1);
+
+	g_reflectionProbe2.GetDimensions(width2, height2);
+
+	uint nMips1 = floor(log2(max(width1, height1)));
+
+	uint nMips2 = floor(log2(max(width2, height2)));
+
+	uint nMips = min(nMips1, nMips2);
+
+	//float roughness2 = pow(2.0f / (fSpecPow + 2.0f), 0.25f);
+
+	return lerp(0, nMips, 1.0f - fSpecPow);
+}
+
 [earlydepthstencil]
 float4 ps_main(GFSDK_Hair_PixelShaderInput input) : SV_Target
 {
@@ -109,7 +139,8 @@ float4 ps_main(GFSDK_Hair_PixelShaderInput input) : SV_Target
             Ldir = normalize(diff);
             atten = max(1.0f - dot(diff, diff) / (range*range), 0.0);
 
-			//Spot Light Attenuation
+			// Spot Light Attenuation
+			// Does not use cookie texture but approximation is quite accurate
 			if (g_lights[i].type.x == LightType_Spot)
 			{
 				float spotEffect = dot(g_lights[i].direction.xyz, -Ldir);
@@ -124,7 +155,7 @@ float4 ps_main(GFSDK_Hair_PixelShaderInput input) : SV_Target
 
 						atten = lerp(atten, 0, angleDif * 50);
 					}
-					// Kill light outside cone
+					// Cut Off light outside cone
 					else
 						atten = 0;
 				}
@@ -149,7 +180,13 @@ float4 ps_main(GFSDK_Hair_PixelShaderInput input) : SV_Target
 		r.rgb += ((hairColor.rgb  * diffuse) + (specular * mat.specularColor.rgb)) * Lcolor.rgb * atten + GlintAmbient * atten * hairColor.rgb;
     }
     //r.rgb = saturate(attr.N.xyz)*0.5+0.5;
-	r.rgb += (hairColor * ShadeSH9(shAr, shAg, shAb, shBr, shBg, shBb, shC, float4(attr.N, 1)));
+	r.rgb += (hairColor * ShadeSH9(shAr, shAg, shAb, shBr, shBg, shBb, shC, float4(attr.N, 1)) * gi_params.x);
+
+	float mip = GetSpecPowToMip(mat.specularColor * gi_params.z);
+	float3 probe1 = g_reflectionProbe1.SampleLevel(texSampler, attr.N, mip).rgb;
+	float3 probe2 = g_reflectionProbe1.SampleLevel(texSampler, attr.N, mip).rgb;
+
+	r.rgb += (hairColor * lerp(probe1, probe2, gi_params.w) * gi_params.y);
     return r;
 }
 

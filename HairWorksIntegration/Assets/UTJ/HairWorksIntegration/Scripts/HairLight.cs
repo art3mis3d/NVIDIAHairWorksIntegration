@@ -62,6 +62,7 @@ namespace UTJ
 
         public enum Type
         {
+            Spot,
             Directional,
             Point,
         }
@@ -81,7 +82,7 @@ namespace UTJ
         Material m_CopyShadowParamsMaterial;
         ComputeBuffer m_ShadowParamsCB;
         CommandBuffer m_BufGrabShadowParams;
-        ShadowParams[] paramsTest = new ShadowParams[1];
+        //ShadowParams[] paramsTest = new ShadowParams[1];
 
         public CommandBuffer GetCommandBuffer()
         {
@@ -129,11 +130,6 @@ namespace UTJ
             return m_ShadowmapCopy.GetNativeTexturePtr();
         }
 
-        /*public IntPtr GetShadowParamsPointer()
-        {
-            return m_ShadowParamsCB.get
-        }*/
-
         public hwi.LightData GetLightData()
         {
             var t = GetComponent<Transform>();
@@ -163,7 +159,7 @@ namespace UTJ
             m_BufGrabShadowParams = new CommandBuffer();
             m_BufGrabShadowParams.name = "Grab shadow params";
 
-            GetCommandBuffer();
+            //GetCommandBuffer();
         }
 
         void OnDisable()
@@ -177,6 +173,10 @@ namespace UTJ
             if (m_copy_light_params)
             {
                 var l = GetComponent<Light>();
+
+                if (!l.enabled || l.intensity == 0)
+                    return;
+
                 m_type = l.type;
                 m_range = l.range;
                 m_color = l.color;
@@ -184,7 +184,7 @@ namespace UTJ
                 m_angle = (int)l.spotAngle;
             }
 
-            GetShadowParams();
+            //GetShadowParams();
         }
 
     }
