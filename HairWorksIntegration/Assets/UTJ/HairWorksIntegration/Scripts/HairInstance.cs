@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 #if UNITY_EDITOR
 using UnityEditor;
+using UnityEditor.Rendering;
 #endif
 
 
@@ -591,6 +592,9 @@ namespace UTJ
         {
             LoadHairShader(m_hair_shader);
             LoadHairAsset(m_hair_asset, false);
+#if UNITY_5_5_OR_NEWER
+            hwi.hwInitializeDepthStencil(true);
+#endif
             AssignAllTextures();
         }
 
@@ -657,7 +661,12 @@ namespace UTJ
         {
             if (cam.renderingPath == RenderingPath.DeferredShading
 #if UNITY_EDITOR
+#if !UNITY_5_5_OR_NEWER
             || (cam.renderingPath == RenderingPath.UsePlayerSettings && PlayerSettings.renderingPath == RenderingPath.DeferredShading)
+#else
+            || (cam.renderingPath == RenderingPath.UsePlayerSettings && EditorGraphicsSettings.GetTierSettings(BuildTargetGroup.Standalone, GraphicsTier.Tier3).renderingPath == RenderingPath.DeferredShading)
+#endif
+
 #endif
             )
             {

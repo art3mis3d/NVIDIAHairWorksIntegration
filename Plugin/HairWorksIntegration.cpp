@@ -351,6 +351,13 @@ hwExport void hwEndScene()
     }
 }
 
+hwExport void hwInitializeDepthStencil(BOOL flipComparison)
+{
+	if (auto ctx = hwGetContext()) {
+		ctx->initializeDepthStencil(flipComparison);
+	}
+}
+
 hwExport void hwSetViewProjection(const hwMatrix *view, const hwMatrix *proj, float fov)
 {
     if (auto ctx = hwGetContext()) {

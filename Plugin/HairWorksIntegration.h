@@ -80,6 +80,7 @@ hwExport void           hwInstanceUpdateSkinningDQs(hwHInstance iid, int num_bon
 
 hwExport void           hwBeginScene();
 hwExport void           hwEndScene();
+hwExport void			hwInitializeDepthStencil(BOOL flipComparison);
 hwExport void           hwSetViewProjection(const hwMatrix *view, const hwMatrix *proj, float fov);
 hwExport void           hwSetRenderTarget(hwTexture *framebuffer, hwTexture *depthbuffer);
 hwExport void           hwSetShader(hwHShader sid);

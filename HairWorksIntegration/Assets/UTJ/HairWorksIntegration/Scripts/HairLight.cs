@@ -82,7 +82,6 @@ namespace UTJ
         Material m_CopyShadowParamsMaterial;
         ComputeBuffer m_ShadowParamsCB;
         CommandBuffer m_BufGrabShadowParams;
-        //ShadowParams[] paramsTest = new ShadowParams[1];
 
         public CommandBuffer GetCommandBuffer()
         {
@@ -112,17 +111,6 @@ namespace UTJ
             m_CopyShadowParamsMaterial.SetBuffer("_ShadowParams", m_ShadowParamsCB);
             m_BufGrabShadowParams.DrawProcedural(Matrix4x4.identity, m_CopyShadowParamsMaterial, 0, MeshTopology.Points, 1);
             Graphics.ExecuteCommandBuffer(m_BufGrabShadowParams);
-
-            if (debug)
-            {
-                float[] values = new float[84];
-
-                m_ShadowParamsCB.GetData(values);
-
-                Debug.Log(values[1]);
-
-                debug = false;
-            }
         }
 
         public IntPtr GetShadowMapPointer()
@@ -159,7 +147,7 @@ namespace UTJ
             m_BufGrabShadowParams = new CommandBuffer();
             m_BufGrabShadowParams.name = "Grab shadow params";
 
-            //GetCommandBuffer();
+            GetCommandBuffer();
         }
 
         void OnDisable()
@@ -174,8 +162,11 @@ namespace UTJ
             {
                 var l = GetComponent<Light>();
 
-                if (!l.enabled || l.intensity == 0)
+                if (!l.enabled)
+                {
+                    m_intensity = 0;
                     return;
+                }
 
                 m_type = l.type;
                 m_range = l.range;

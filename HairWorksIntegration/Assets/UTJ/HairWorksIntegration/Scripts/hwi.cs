@@ -223,8 +223,11 @@ namespace UTJ
 
             public int m_colorizeMode;               //!< [GFSDK_HAIR_COLORIZE_MODE] colorize hair based on various terms. See GFSDK_HAIR_COLORIZE_MODE.
 
+
+            const int num_textures = (int)TextureType.NUM_TEXTURES;
+
             // texture control
-            public fixed int m_textureChannels[(int)TextureType.NUM_TEXTURES]; //!< texture chanel for each control textures.  
+            public fixed int m_textureChannels[num_textures]; //!< texture chanel for each control textures.  
 
             // model to world transform
             public Matrix4x4 m_modelToWorld;              // render time transformation to offset hair from its simulated position
@@ -532,6 +535,7 @@ namespace UTJ
 
         [DllImport("HairWorksIntegration")] public static extern void       hwBeginScene();
         [DllImport("HairWorksIntegration")] public static extern void       hwEndScene();
+        [DllImport("HairWorksIntegration")] public static extern void       hwInitializeDepthStencil(bool flipComparison);
         [DllImport("HairWorksIntegration")] public static extern void       hwSetViewProjection(ref Matrix4x4 view, ref Matrix4x4 proj, float fov);
         [DllImport("HairWorksIntegration")] public static extern void       hwSetRenderTarget(IntPtr framebuffer, IntPtr depthbuffer);
         [DllImport("HairWorksIntegration")] public static extern void       hwSetShader(HShader sid);

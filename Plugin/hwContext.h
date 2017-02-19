@@ -127,6 +127,7 @@ public:
 
     void beginScene();
     void endScene();
+	void initializeDepthStencil(BOOL flipComparison);
     void setViewProjection(const hwMatrix &view, const hwMatrix &proj, float fov);
     void setRenderTarget(hwTexture *framebuffer, hwTexture *depthbuffer);
     void setShader(hwHShader hs);
