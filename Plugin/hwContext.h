@@ -84,6 +84,15 @@ struct hwConstantBuffer
     hwConstantBuffer() : num_lights(0) {}
 };
 
+struct hwShadowParamBuffer
+{
+	gfsdk_float4x4 worldToShadow[4];
+	hwFloat4 splitSpheres[4];
+	hwFloat4 shadowSplitSqRadii;
+	hwFloat4 LightSplitsNear;
+	hwFloat4 LightSplitsFar;
+};
+
 
 
 class hwContext
@@ -132,6 +141,8 @@ public:
     void setRenderTarget(hwTexture *framebuffer, hwTexture *depthbuffer);
     void setShader(hwHShader hs);
     void setLights(int num_lights, const hwLightData *lights);
+	void setShadowTexture(ID3D11Resource *shadowTexture);
+	void setShadowParams(ID3D11Buffer *shadowCB);
 	void setSphericalHarmonics(const hwFloat4 &Ar, const hwFloat4 &Ag, const hwFloat4 &Ab, const hwFloat4 &Br, const hwFloat4 &Bg, const hwFloat4 &Bb, const hwFloat4 &C);
 	void setGIParameters(const hwFloat4 &Params);
 	void setReflectionProbe(ID3D11Resource *tex1, ID3D11Resource *tex2);
@@ -184,6 +195,7 @@ private:
     ID3D11Buffer            *m_rs_constant_buffer = nullptr;
 
     hwConstantBuffer        m_cb;
+	hwShadowParamBuffer		m_ShadowParams;
 
 	ID3D11Resource *reflectionTexture1 = nullptr;
 	ID3D11Resource *reflectionTexture2 = nullptr;
@@ -191,4 +203,9 @@ private:
 	
 	ID3D11ShaderResourceView* reflectionSRV1 = nullptr;
 	ID3D11ShaderResourceView* reflectionSRV2 = nullptr;
+
+	ID3D11Texture2D *shadowTexture = nullptr;
+	ID3D11ShaderResourceView *shadowSRV = nullptr;
+
+	ID3D11Buffer *shadowBuffer = nullptr;
 };

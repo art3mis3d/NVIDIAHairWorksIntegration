@@ -540,6 +540,8 @@ namespace UTJ
         [DllImport("HairWorksIntegration")] public static extern void       hwSetRenderTarget(IntPtr framebuffer, IntPtr depthbuffer);
         [DllImport("HairWorksIntegration")] public static extern void       hwSetShader(HShader sid);
         [DllImport("HairWorksIntegration")] public static extern void       hwSetLights(int num_lights, IntPtr lights);
+        [DllImport("HairWorksIntegration")] public static extern void       hwSetShadowTexture(IntPtr shadowTex);
+        [DllImport("HairWorksIntegration")] public static extern void       hwSetShadowParams(IntPtr shadowCB);
         [DllImport("HairWorksIntegration")] public static extern void       hwSetSphericalHarmonics(ref Vector4 Ar, ref Vector4 Ag, ref Vector4 Ab, ref Vector4 Br, ref Vector4 Bg, ref Vector4 Bb, ref Vector4 C);
         [DllImport("HairWorksIntegration")] public static extern void       hwSetReflectionProbe(IntPtr tex1, IntPtr tex2);
         [DllImport("HairWorksIntegration")] public static extern void       hwSetGIParameters(ref Vector4 Params);

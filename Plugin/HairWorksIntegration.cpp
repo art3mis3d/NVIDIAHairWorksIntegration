@@ -358,6 +358,20 @@ hwExport void hwInitializeDepthStencil(BOOL flipComparison)
 	}
 }
 
+hwExport void hwSetShadowTexture(ID3D11Resource *shadowTex)
+{
+	if (auto ctx = hwGetContext()) {
+		ctx->setShadowTexture(shadowTex);
+	}
+}
+
+hwExport void hwSetShadowParams(ID3D11Buffer *shadowBuffer)
+{
+	if (auto ctx = hwGetContext()) {
+		ctx->setShadowParams(shadowBuffer);
+	}
+}
+
 hwExport void hwSetViewProjection(const hwMatrix *view, const hwMatrix *proj, float fov)
 {
     if (auto ctx = hwGetContext()) {

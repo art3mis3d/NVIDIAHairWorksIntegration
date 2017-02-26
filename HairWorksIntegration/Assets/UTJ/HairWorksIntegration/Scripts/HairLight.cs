@@ -10,6 +10,7 @@ namespace UTJ
     [AddComponentMenu("UTJ/Hair Works Integration/Hair Light")]
     [RequireComponent(typeof(Light))]
     [ExecuteInEditMode]
+    [Serializable]
     public class HairLight : MonoBehaviour
     {
         #region static
@@ -67,6 +68,14 @@ namespace UTJ
             Point,
         }
 
+        public enum ShadowResolution
+        {
+            x512,
+            x1024,
+            x2048,
+            x4096
+        }
+
         hwi.LightData m_data;
 
         public bool m_copy_light_params = false;
@@ -75,20 +84,25 @@ namespace UTJ
         public Color m_color = Color.white;
         public float m_intensity = 1.0f;
         public int m_angle = 180;
-        CommandBuffer m_cb;
-        public bool debug;
+        public bool enableShadow;
+        public ShadowResolution shadowResolution = ShadowResolution.x1024;
+        CommandBuffer m_cb = null;
 
-        public RenderTexture m_ShadowmapCopy;
+        RenderTexture m_ShadowmapCopy;
         Material m_CopyShadowParamsMaterial;
         ComputeBuffer m_ShadowParamsCB;
         CommandBuffer m_BufGrabShadowParams;
+
+        IntPtr shadowMapPointer = IntPtr.Zero;
+        IntPtr shadowParamsPointer = IntPtr.Zero;
 
         public CommandBuffer GetCommandBuffer()
         {
             if (m_cb == null)
             {
                 RenderTargetIdentifier shadowmap = BuiltinRenderTextureType.CurrentActive;
-                m_ShadowmapCopy = new RenderTexture(1024, 1024, 0);
+              
+                CreateShadowTexture();
 
                 m_cb = new CommandBuffer();
                 m_cb.name = "Hair Shadow";
@@ -102,7 +116,25 @@ namespace UTJ
             return m_cb;
         }
 
-        public void GetShadowParams()
+        public void CreateShadowTexture()
+        {
+            switch(shadowResolution)
+            {
+                case ShadowResolution.x512: m_ShadowmapCopy = new RenderTexture(512, 512, 0, RenderTextureFormat.RFloat, RenderTextureReadWrite.Linear);
+                    break;
+                case ShadowResolution.x1024: m_ShadowmapCopy = new RenderTexture(1024, 1024, 0, RenderTextureFormat.RFloat, RenderTextureReadWrite.Linear);
+                    break;
+                case ShadowResolution.x2048: m_ShadowmapCopy = new RenderTexture(2048, 2048, 0, RenderTextureFormat.RFloat, RenderTextureReadWrite.Linear);
+                    break;
+                case ShadowResolution.x4096: m_ShadowmapCopy = new RenderTexture(4096, 4096, 0, RenderTextureFormat.RFloat, RenderTextureReadWrite.Linear);
+                    break;
+                default: break;
+            }
+
+            m_ShadowmapCopy.Create();
+        }
+
+        public void UpdateShadowParams()
         {
             if (m_BufGrabShadowParams != null)
                 m_BufGrabShadowParams.Clear();
@@ -111,11 +143,32 @@ namespace UTJ
             m_CopyShadowParamsMaterial.SetBuffer("_ShadowParams", m_ShadowParamsCB);
             m_BufGrabShadowParams.DrawProcedural(Matrix4x4.identity, m_CopyShadowParamsMaterial, 0, MeshTopology.Points, 1);
             Graphics.ExecuteCommandBuffer(m_BufGrabShadowParams);
+            Graphics.ClearRandomWriteTargets();
         }
 
         public IntPtr GetShadowMapPointer()
         {
-            return m_ShadowmapCopy.GetNativeTexturePtr();
+            if (m_ShadowmapCopy == null || !m_ShadowmapCopy.IsCreated())
+            {
+                shadowMapPointer = IntPtr.Zero;
+                return IntPtr.Zero;
+            }
+
+            if (shadowMapPointer == IntPtr.Zero)
+                shadowMapPointer = m_ShadowmapCopy.GetNativeTexturePtr();
+
+            return shadowMapPointer;
+        }
+
+        public IntPtr GetShadowParamsPointer()
+        {
+            if (m_ShadowParamsCB == null)
+                return IntPtr.Zero;
+
+            if (shadowParamsPointer == IntPtr.Zero)
+                shadowParamsPointer = m_ShadowParamsCB.GetNativeBufferPtr();
+
+            return shadowParamsPointer;
         }
 
         public hwi.LightData GetLightData()
@@ -126,9 +179,14 @@ namespace UTJ
             m_data.color = new Color(m_color.r * m_intensity, m_color.g * m_intensity, m_color.b * m_intensity, 0.0f);
             m_data.position = t.position;
             m_data.direction = t.forward;
+
+            if (m_type == LightType.Directional)
+            {
+                m_data.direction = -m_data.direction;
+            }
+
             m_data.angle = m_angle;
             return m_data;
-
         }
 
 
@@ -143,16 +201,22 @@ namespace UTJ
 
             m_CopyShadowParamsMaterial = new Material(Shader.Find("Hidden/CopyShadowParams"));
 
-            m_ShadowParamsCB = new ComputeBuffer(1, 336);
+            m_ShadowParamsCB = new ComputeBuffer(1, 368);
             m_BufGrabShadowParams = new CommandBuffer();
             m_BufGrabShadowParams.name = "Grab shadow params";
 
             GetCommandBuffer();
+
+            Shader.EnableKeyword("SHADOWS_SPLIT_SPHERES");
         }
 
         void OnDisable()
         {
             GetInstances().Remove(this);
+            hwi.hwSetShadowTexture(IntPtr.Zero);
+            hwi.hwSetShadowParams(IntPtr.Zero);
+            shadowMapPointer = IntPtr.Zero;
+            shadowParamsPointer = IntPtr.Zero;
             m_ShadowParamsCB.Release();
         }
 
@@ -175,7 +239,24 @@ namespace UTJ
                 m_angle = (int)l.spotAngle;
             }
 
-            //GetShadowParams();
+           if (!enableShadow)
+            {
+                shadowMapPointer = IntPtr.Zero;
+                shadowParamsPointer = IntPtr.Zero;
+                hwi.hwSetShadowTexture(IntPtr.Zero);
+                hwi.hwSetShadowParams(IntPtr.Zero);
+                return;
+            }
+
+            UpdateShadowParams();
+
+           hwi.hwSetShadowParams(GetShadowParamsPointer());
+
+            if (shadowMapPointer == IntPtr.Zero)
+            {
+                hwi.hwSetShadowTexture(GetShadowMapPointer());
+            }
+            
         }
 
     }

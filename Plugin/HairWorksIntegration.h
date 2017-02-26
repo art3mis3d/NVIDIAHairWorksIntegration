@@ -85,6 +85,8 @@ hwExport void           hwSetViewProjection(const hwMatrix *view, const hwMatrix
 hwExport void           hwSetRenderTarget(hwTexture *framebuffer, hwTexture *depthbuffer);
 hwExport void           hwSetShader(hwHShader sid);
 hwExport void           hwSetLights(int num_lights, const hwLightData *lights);
+hwExport void			hwSetShadowTexture(ID3D11Resource *shadowTex);
+hwExport void			hwSetShadowParams(ID3D11Buffer *shadowCB);
 hwExport void			hwSetSphericalHarmonics(const hwFloat4 *Ar, const hwFloat4 *Ag, const hwFloat4 *Ab, const hwFloat4 *Br, const hwFloat4 *Bg, const hwFloat4 *Bb, const hwFloat4 *C);
 hwExport void			hwSetReflectionProbe(ID3D11Resource *tex1, ID3D11Resource *tex2);
 hwExport void			hwSetGIParameters(const hwFloat4 *Params);

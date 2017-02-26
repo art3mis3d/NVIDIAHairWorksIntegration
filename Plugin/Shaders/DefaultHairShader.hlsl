@@ -21,8 +21,11 @@ GFSDK_HAIR_DECLARE_SHADER_RESOURCES(t0, t1, t2);
 Texture2D	g_rootHairColorTexture	: register(t3);
 Texture2D	g_tipHairColorTexture	: register(t4);
 Texture2D   g_specularTexture       : register(t5);
+
 TextureCube g_reflectionProbe1		: register(t6);
 TextureCube g_reflectionProbe2		: register(t7);
+
+Texture2D g_shadowTexture			: register(t8);
 
 cbuffer cbPerFrame : register(b0)
 {
@@ -37,6 +40,15 @@ cbuffer cbPerFrame : register(b0)
     int4                        g_numLights;        // x: num lights
     LightData                   g_lights[MaxLights];
     GFSDK_Hair_ConstantBuffer   g_hairConstantBuffer;
+}
+
+cbuffer cbShadowParams : register(b1)
+{
+	row_major float4x4 worldToShadow[4];
+	float4 shadowSplitSpheres[4];
+	float4 shadowSplitSqRadii;
+	float4 LightSplitsNear;
+	float4 LightSplitsFar;
 }
 
 cbuffer UnityPerDraw
@@ -56,6 +68,54 @@ cbuffer UnityPerDraw
 
 
 SamplerState texSampler: register(s0);
+SamplerComparisonState shadowSampler : register(s1);
+
+
+inline float4 getCascadeWeights(float3 wpos, float z)
+{
+	float4 zNear = float4(z >= LightSplitsNear);
+	float4 zFar = float4(z < LightSplitsFar);
+	float4 weights = zNear * zFar;
+	return weights;
+}
+
+
+inline float4 getCascadeWeights_splitSpheres(float3 wpos)
+{
+	float3 fromCenter0 = wpos.xyz - shadowSplitSpheres[0].xyz;
+	float3 fromCenter1 = wpos.xyz - shadowSplitSpheres[1].xyz;
+	float3 fromCenter2 = wpos.xyz - shadowSplitSpheres[2].xyz;
+	float3 fromCenter3 = wpos.xyz - shadowSplitSpheres[3].xyz;
+	float4 distances2 = float4(dot(fromCenter0, fromCenter0), dot(fromCenter1, fromCenter1), dot(fromCenter2, fromCenter2), dot(fromCenter3, fromCenter3));
+	float4 weights = float4(distances2 < shadowSplitSqRadii);
+	weights.yzw = saturate(weights.yzw - weights.xyz);
+	return weights;
+}
+
+
+inline float4 getShadowCoord(float4 wpos, float4 cascadeWeights)
+{
+	/*float3 sc0 = mul(worldToShadow[0], wpos).xyz;
+	float3 sc1 = mul(worldToShadow[1], wpos).xyz;
+	float3 sc2 = mul(worldToShadow[2], wpos).xyz;
+	float3 sc3 = mul(worldToShadow[3], wpos).xyz;*/
+
+	float3 sc0 = mul(wpos, worldToShadow[0]).xyz;
+	float3 sc1 = mul(wpos, worldToShadow[1]).xyz;
+	float3 sc2 = mul(wpos, worldToShadow[2]).xyz;
+	float3 sc3 = mul(wpos, worldToShadow[3]).xyz;
+
+	float4 shadowMapCoordinate = float4(sc0 * cascadeWeights[0] + sc1 * cascadeWeights[1] + sc2 * cascadeWeights[2] + sc3 * cascadeWeights[3], 1);
+	float  noCascadeWeights = 1 - dot(cascadeWeights, float4(1, 1, 1, 1));
+	shadowMapCoordinate.z += noCascadeWeights;
+	return shadowMapCoordinate;
+}
+
+inline float sampleShadow(Texture2D shadowTex, SamplerComparisonState state, float4 coord)
+{
+	return shadowTex.SampleCmpLevelZero(state, coord.xy, coord.z).r;
+	//return shadowTex.Sample(texSampler, coord.xy);
+}
 
 
 inline float3 ShadeSH9(float4 Ar, float4 Ag, float4 Ab, float4 Br, float4 Bg, float4 Bb, float4 C, float4 normal)
@@ -125,6 +185,11 @@ float4 ps_main(GFSDK_Hair_PixelShaderInput input) : SV_Target
 
     float3 hairColor = GFSDK_Hair_SampleHairColorTex(g_hairConstantBuffer, mat, texSampler, g_rootHairColorTexture, g_tipHairColorTexture, attr.texcoords.xyz).rgb;
 
+	float4 cascadeWeights =  getCascadeWeights_splitSpheres(attr.P.xyz);
+	float4 shadowCoords = getShadowCoord(float4(attr.P.xyz, 1), cascadeWeights);
+	float shadow = sampleShadow(g_shadowTexture, shadowSampler, shadowCoords);
+	
+
     for (int i = 0; i < g_numLights.x; i++)
     {
         float3 Lcolor = g_lights[i].color.rgb;
@@ -132,6 +197,7 @@ float4 ps_main(GFSDK_Hair_PixelShaderInput input) : SV_Target
         float atten = 1.0;
         if (g_lights[i].type.x == LightType_Directional) {
             Ldir = g_lights[i].direction.xyz;
+			Lcolor *= shadow;
         }
         else {
             float range = g_lights[i].position.w;
@@ -187,6 +253,7 @@ float4 ps_main(GFSDK_Hair_PixelShaderInput input) : SV_Target
 	float3 probe2 = g_reflectionProbe1.SampleLevel(texSampler, attr.N, mip).rgb;
 
 	r.rgb += (hairColor * lerp(probe1, probe2, gi_params.w) * gi_params.y);
+	
     return r;
 }
 
