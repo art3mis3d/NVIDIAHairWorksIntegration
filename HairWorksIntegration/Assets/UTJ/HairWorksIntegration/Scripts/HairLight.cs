@@ -250,7 +250,10 @@ namespace UTJ
 
             UpdateShadowParams();
 
-           hwi.hwSetShadowParams(GetShadowParamsPointer());
+            if (shadowParamsPointer == IntPtr.Zero)
+            {
+                hwi.hwSetShadowParams(GetShadowParamsPointer());
+            }
 
             if (shadowMapPointer == IntPtr.Zero)
             {
