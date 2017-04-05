@@ -30,6 +30,7 @@ Externals/
 Library/
 Temp/
 Build/
+Builds/
 Hidden/
 Hidden.meta
 obj/

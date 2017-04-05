@@ -136,13 +136,18 @@ namespace UTJ
 
         public void UpdateShadowParams()
         {
-            if (m_BufGrabShadowParams != null)
-                m_BufGrabShadowParams.Clear();
+            if (m_BufGrabShadowParams == null)
+            {
+                m_BufGrabShadowParams = new CommandBuffer();
+                m_BufGrabShadowParams.name = "Grab shadow params";
+            }
 
-            Graphics.SetRandomWriteTarget(1, m_ShadowParamsCB, true);
-            m_CopyShadowParamsMaterial.SetBuffer("_ShadowParams", m_ShadowParamsCB);
+            m_BufGrabShadowParams.Clear();
+            Graphics.SetRandomWriteTarget(2, m_ShadowParamsCB, true);
+           
             m_BufGrabShadowParams.DrawProcedural(Matrix4x4.identity, m_CopyShadowParamsMaterial, 0, MeshTopology.Points, 1);
             Graphics.ExecuteCommandBuffer(m_BufGrabShadowParams);
+            
             Graphics.ClearRandomWriteTargets();
         }
 
@@ -199,9 +204,11 @@ namespace UTJ
                 Debug.LogWarning("Max HairLight is " + hwi.LightData.MaxLights + ". Current active HairLight is " + GetInstances().Count);
             }
 
-            m_CopyShadowParamsMaterial = new Material(Shader.Find("Hidden/CopyShadowParams"));
+            Shader shadowCopyShader = Shader.Find("Hidden/CopyShadowParams");
 
-            m_ShadowParamsCB = new ComputeBuffer(1, 368);
+            m_CopyShadowParamsMaterial = new Material(shadowCopyShader);
+
+            m_ShadowParamsCB = new ComputeBuffer(1, 368, ComputeBufferType.Default);
             m_BufGrabShadowParams = new CommandBuffer();
             m_BufGrabShadowParams.name = "Grab shadow params";
 
@@ -253,13 +260,14 @@ namespace UTJ
             if (shadowParamsPointer == IntPtr.Zero)
             {
                 hwi.hwSetShadowParams(GetShadowParamsPointer());
+                
             }
 
             if (shadowMapPointer == IntPtr.Zero)
             {
                 hwi.hwSetShadowTexture(GetShadowMapPointer());
+               
             }
-            
         }
 
     }

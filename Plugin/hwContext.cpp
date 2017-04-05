@@ -971,8 +971,9 @@ void hwContext::renderImpl(hwHInstance hi)
 		shadowSamplerDesc.BorderColor[1] = 0;
 		shadowSamplerDesc.BorderColor[2] = 0;
 		shadowSamplerDesc.BorderColor[3] = 0;
-		shadowSamplerDesc.ComparisonFunc = D3D11_COMPARISON_GREATER;
-		shadowSamplerDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_POINT;
+		//shadowSamplerDesc.ComparisonFunc = D3D11_COMPARISON_GREATER;
+		//shadowSamplerDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_POINT;
+		shadowSamplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
 		shadowSamplerDesc.MaxAnisotropy = 0;
 		shadowSamplerDesc.MinLOD = 0;
 		shadowSamplerDesc.MaxLOD = D3D11_FLOAT32_MAX;

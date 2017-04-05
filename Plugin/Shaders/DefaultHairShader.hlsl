@@ -68,7 +68,8 @@ cbuffer UnityPerDraw
 
 
 SamplerState texSampler: register(s0);
-SamplerComparisonState shadowSampler : register(s1);
+//SamplerComparisonState shadowSampler : register(s1);
+SamplerState shadowSampler : register(s1);
 
 
 inline float4 getCascadeWeights(float3 wpos, float z)
@@ -187,8 +188,10 @@ float4 ps_main(GFSDK_Hair_PixelShaderInput input) : SV_Target
 
 	float4 cascadeWeights =  getCascadeWeights_splitSpheres(attr.P.xyz);
 	float4 shadowCoords = getShadowCoord(float4(attr.P.xyz, 1), cascadeWeights);
-	float shadow = sampleShadow(g_shadowTexture, shadowSampler, shadowCoords);
+	//float shadow = sampleShadow(g_shadowTexture, shadowSampler, shadowCoords);
 	
+	float filteredDepth = GFSDK_Hair_ShadowFilterDepth(g_shadowTexture, shadowSampler, shadowCoords.xy, shadowCoords.z, 1.0);
+	float shadow = GFSDK_Hair_ShadowLitFactor(g_hairConstantBuffer, mat, filteredDepth);
 
     for (int i = 0; i < g_numLights.x; i++)
     {
@@ -242,10 +245,12 @@ float4 ps_main(GFSDK_Hair_PixelShaderInput input) : SV_Target
 			GlintAmbient = mat.glintStrength * glint * Luminance;
 		}
 
-		r.a = GFSDK_Hair_ComputeAlpha(g_hairConstantBuffer, mat, attr);
+		
 		r.rgb += ((hairColor.rgb  * diffuse) + (specular * mat.specularColor.rgb)) * Lcolor.rgb * atten + GlintAmbient * atten * hairColor.rgb;
     }
     //r.rgb = saturate(attr.N.xyz)*0.5+0.5;
+	r.a = GFSDK_Hair_ComputeAlpha(g_hairConstantBuffer, mat, attr);
+
 	r.rgb += (hairColor * ShadeSH9(shAr, shAg, shAb, shBr, shBg, shBb, shC, float4(attr.N, 1)) * gi_params.x);
 
 	float mip = GetSpecPowToMip(mat.specularColor * gi_params.z);
