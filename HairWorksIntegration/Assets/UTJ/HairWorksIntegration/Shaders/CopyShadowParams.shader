@@ -6,7 +6,8 @@
 	{
 		CGPROGRAM
 		#pragma target 5.0
-		//#pragma only_renderers d3d11
+		#pragma only_renderers d3d11
+		#pragma enable_d3d11_debug_symbols
 		#pragma vertex vert
 		#pragma fragment frag
 		#include "UnityCG.cginc"
@@ -20,7 +21,7 @@
 				float4 LightSplitsFar;
 			};
 
-			RWStructuredBuffer<ShadowParams> _ShadowParams : register(u2);
+			RWStructuredBuffer<ShadowParams> _ShadowParams : register(u1);
 
 			float4 vert() : SV_POSITION
 			{

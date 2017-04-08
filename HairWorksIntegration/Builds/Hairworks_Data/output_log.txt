@@ -1,11 +1,19 @@
-Initialize engine version: 5.6.0f3 (497a0f351392)
+Mono path[0] = 'C:/Users/Emile/Desktop/NVIDIAHairWorksIntegration/HairWorksIntegration/Builds/Hairworks_Data/Managed'
+Mono path[1] = 'C:/Users/Emile/Desktop/NVIDIAHairWorksIntegration/HairWorksIntegration/Builds/Hairworks_Data/Mono'
+Mono config path = 'C:/Users/Emile/Desktop/NVIDIAHairWorksIntegration/HairWorksIntegration/Builds/Hairworks_Data/Mono/etc'
+PlayerConnection initialized from C:/Users/Emile/Desktop/NVIDIAHairWorksIntegration/HairWorksIntegration/Builds/Hairworks_Data (debug = 0)
+PlayerConnection initialized network socket : 0.0.0.0 55395
+Multi-casting "[IP] 192.168.56.1 [Port] 55395 [Flags] 2 [Guid] 718535980 [EditorId] 3836782150 [Version] 1048832 [Id] WindowsPlayer(Emile-PC) [Debug] 0" to [225.0.0.222:54997]...
+Started listening to [0.0.0.0:55395]
+PlayerConnection already initialized - listening to [0.0.0.0:55395]
+Player data archive not found at `C:/Users/Emile/Desktop/NVIDIAHairWorksIntegration/HairWorksIntegration/Builds/Hairworks_Data/data.unity3d`, using local filesystemInitialize engine version: 5.6.0f3 (497a0f351392)
 GfxDevice: creating device client; threaded=1
 Direct3D:
     Version:  Direct3D 11.0 [level 11.0]
     Renderer: NVIDIA GeForce GTX 760 (ID=0x1187)
     Vendor:   NVIDIA
     VRAM:     2017 MB
-    Driver:   21.21.13.7892
+    Driver:   22.21.13.8165
 Begin MonoManager ReloadAssembly
 Platform assembly: C:\Users\Emile\Desktop\NVIDIAHairWorksIntegration\HairWorksIntegration\Builds\Hairworks_Data\Managed\UnityEngine.dll (this message is harmless)
 Loading C:\Users\Emile\Desktop\NVIDIAHairWorksIntegration\HairWorksIntegration\Builds\Hairworks_Data\Managed\UnityEngine.dll into Unity Child Domain
@@ -17,26 +25,14 @@ Platform assembly: C:\Users\Emile\Desktop\NVIDIAHairWorksIntegration\HairWorksIn
 Loading C:\Users\Emile\Desktop\NVIDIAHairWorksIntegration\HairWorksIntegration\Builds\Hairworks_Data\Managed\UnityEngine.UI.dll into Unity Child Domain
 Platform assembly: C:\Users\Emile\Desktop\NVIDIAHairWorksIntegration\HairWorksIntegration\Builds\Hairworks_Data\Managed\UnityEngine.Networking.dll (this message is harmless)
 Loading C:\Users\Emile\Desktop\NVIDIAHairWorksIntegration\HairWorksIntegration\Builds\Hairworks_Data\Managed\UnityEngine.Networking.dll into Unity Child Domain
-- Completed reload, in  0.278 seconds
+- Completed reload, in  0.030 seconds
 Platform assembly: C:\Users\Emile\Desktop\NVIDIAHairWorksIntegration\HairWorksIntegration\Builds\Hairworks_Data\Managed\System.Core.dll (this message is harmless)
 Platform assembly: C:\Users\Emile\Desktop\NVIDIAHairWorksIntegration\HairWorksIntegration\Builds\Hairworks_Data\Managed\System.dll (this message is harmless)
 desktop: 1920x1080 59Hz; virtual: 1920x1080 at 0,0
 <RI> Initializing input.
 <RI> Input initialized.
 <RI> Initialized touch support.
-UnloadTime: 0.927658 ms
-Shadow Copy Shader Is Supported.
- 
-(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/DebugBindings.gen.cpp Line: 51)
-
-147218128
- 
-(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/DebugBindings.gen.cpp Line: 51)
-
-147217296
- 
-(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/DebugBindings.gen.cpp Line: 51)
-
+UnloadTime: 0.999806 ms
 Setting up 2 worker threads for Enlighten.
-  Thread -> id: 162c -> priority: 1 
-  Thread -> id: 261c -> priority: 1 
+  Thread -> id: 52c8 -> priority: 1 
+  Thread -> id: 3ad0 -> priority: 1 

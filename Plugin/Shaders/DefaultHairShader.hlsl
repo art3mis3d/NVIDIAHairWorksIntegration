@@ -15,6 +15,15 @@ struct LightData
 	int4 angle;
 };
 
+struct ShadowParams
+{
+	row_major float4x4 worldToShadow[4];
+	float4 shadowSplitSpheres[4];
+	float4 shadowSplitSqRadii;
+	float4 LightSplitsNear;
+	float4 LightSplitsFar;
+};
+
 
 GFSDK_HAIR_DECLARE_SHADER_RESOURCES(t0, t1, t2);
 
@@ -26,6 +35,7 @@ TextureCube g_reflectionProbe1		: register(t6);
 TextureCube g_reflectionProbe2		: register(t7);
 
 Texture2D g_shadowTexture			: register(t8);
+StructuredBuffer<ShadowParams> shadowParams : register(t9);
 
 cbuffer cbPerFrame : register(b0)
 {
@@ -42,14 +52,14 @@ cbuffer cbPerFrame : register(b0)
     GFSDK_Hair_ConstantBuffer   g_hairConstantBuffer;
 }
 
-cbuffer cbShadowParams : register(b1)
+/*cbuffer cbShadowParams : register(b1)
 {
 	row_major float4x4 worldToShadow[4];
 	float4 shadowSplitSpheres[4];
 	float4 shadowSplitSqRadii;
 	float4 LightSplitsNear;
 	float4 LightSplitsFar;
-}
+}*/
 
 cbuffer UnityPerDraw
 {
@@ -71,11 +81,13 @@ SamplerState texSampler: register(s0);
 //SamplerComparisonState shadowSampler : register(s1);
 SamplerState shadowSampler : register(s1);
 
+//uniform RWStructuredBuffer<ShadowParams> shadowParams : register(u1);
+
 
 inline float4 getCascadeWeights(float3 wpos, float z)
 {
-	float4 zNear = float4(z >= LightSplitsNear);
-	float4 zFar = float4(z < LightSplitsFar);
+	float4 zNear = float4(z >= shadowParams[0].LightSplitsNear);
+	float4 zFar = float4(z < shadowParams[0].LightSplitsFar);
 	float4 weights = zNear * zFar;
 	return weights;
 }
@@ -83,12 +95,12 @@ inline float4 getCascadeWeights(float3 wpos, float z)
 
 inline float4 getCascadeWeights_splitSpheres(float3 wpos)
 {
-	float3 fromCenter0 = wpos.xyz - shadowSplitSpheres[0].xyz;
-	float3 fromCenter1 = wpos.xyz - shadowSplitSpheres[1].xyz;
-	float3 fromCenter2 = wpos.xyz - shadowSplitSpheres[2].xyz;
-	float3 fromCenter3 = wpos.xyz - shadowSplitSpheres[3].xyz;
+	float3 fromCenter0 = wpos.xyz - shadowParams[0].shadowSplitSpheres[0].xyz;
+	float3 fromCenter1 = wpos.xyz - shadowParams[0].shadowSplitSpheres[1].xyz;
+	float3 fromCenter2 = wpos.xyz - shadowParams[0].shadowSplitSpheres[2].xyz;
+	float3 fromCenter3 = wpos.xyz - shadowParams[0].shadowSplitSpheres[3].xyz;
 	float4 distances2 = float4(dot(fromCenter0, fromCenter0), dot(fromCenter1, fromCenter1), dot(fromCenter2, fromCenter2), dot(fromCenter3, fromCenter3));
-	float4 weights = float4(distances2 < shadowSplitSqRadii);
+	float4 weights = float4(distances2 < shadowParams[0].shadowSplitSqRadii);
 	weights.yzw = saturate(weights.yzw - weights.xyz);
 	return weights;
 }
@@ -101,10 +113,10 @@ inline float4 getShadowCoord(float4 wpos, float4 cascadeWeights)
 	float3 sc2 = mul(worldToShadow[2], wpos).xyz;
 	float3 sc3 = mul(worldToShadow[3], wpos).xyz;*/
 
-	float3 sc0 = mul(wpos, worldToShadow[0]).xyz;
-	float3 sc1 = mul(wpos, worldToShadow[1]).xyz;
-	float3 sc2 = mul(wpos, worldToShadow[2]).xyz;
-	float3 sc3 = mul(wpos, worldToShadow[3]).xyz;
+	float3 sc0 = mul(wpos, shadowParams[0].worldToShadow[0]).xyz;
+	float3 sc1 = mul(wpos, shadowParams[0].worldToShadow[1]).xyz;
+	float3 sc2 = mul(wpos, shadowParams[0].worldToShadow[2]).xyz;
+	float3 sc3 = mul(wpos, shadowParams[0].worldToShadow[3]).xyz;
 
 	float4 shadowMapCoordinate = float4(sc0 * cascadeWeights[0] + sc1 * cascadeWeights[1] + sc2 * cascadeWeights[2] + sc3 * cascadeWeights[3], 1);
 	float  noCascadeWeights = 1 - dot(cascadeWeights, float4(1, 1, 1, 1));

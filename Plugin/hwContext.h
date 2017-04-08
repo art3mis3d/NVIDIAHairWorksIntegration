@@ -142,7 +142,7 @@ public:
     void setShader(hwHShader hs);
     void setLights(int num_lights, const hwLightData *lights);
 	void setShadowTexture(ID3D11Resource *shadowTexture);
-	void setShadowParams(ID3D11Buffer *shadowCB);
+	void setShadowParams(void* shadowCB);
 	void setSphericalHarmonics(const hwFloat4 &Ar, const hwFloat4 &Ag, const hwFloat4 &Ab, const hwFloat4 &Br, const hwFloat4 &Bg, const hwFloat4 &Bb, const hwFloat4 &C);
 	void setGIParameters(const hwFloat4 &Params);
 	void setReflectionProbe(ID3D11Resource *tex1, ID3D11Resource *tex2);
@@ -191,8 +191,8 @@ private:
     DeferredCalls           m_commands;
     DeferredCalls           m_commands_back;
 
-    ID3D11DepthStencilState *m_rs_enable_depth = nullptr;
-    ID3D11Buffer            *m_rs_constant_buffer = nullptr;
+    ID3D11DepthStencilState *m_rs_enable_depth;
+    ID3D11Buffer            *m_rs_constant_buffer;
 
     hwConstantBuffer        m_cb;
 	hwShadowParamBuffer		m_ShadowParams;
@@ -205,7 +205,8 @@ private:
 	ID3D11ShaderResourceView* reflectionSRV2 = nullptr;
 
 	ID3D11Texture2D *shadowTexture = nullptr;
-	ID3D11ShaderResourceView *shadowSRV = nullptr;
+	ID3D11ShaderResourceView *shadowSRV =  nullptr;
 
 	ID3D11Buffer *shadowBuffer = nullptr;
+	ID3D11ShaderResourceView* bufferSRV = nullptr;
 };

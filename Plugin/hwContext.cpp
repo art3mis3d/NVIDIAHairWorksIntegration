@@ -663,9 +663,19 @@ void hwContext::initializeDepthStencil(BOOL flipComparison)
 	
 }
 
-void hwContext::setShadowParams(ID3D11Buffer *shadowCB)
+void hwContext::setShadowParams(void* shadowCB)
 {
-	shadowBuffer = shadowCB;
+	shadowBuffer = static_cast<ID3D11Buffer*>(shadowCB);
+
+	if (!shadowBuffer)
+		return;
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
+	ZeroMemory(&srvDesc, sizeof(srvDesc));
+	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+	srvDesc.Buffer.ElementWidth = 1;
+	m_d3ddev->CreateShaderResourceView(shadowBuffer, &srvDesc, &bufferSRV);
 }
 
 void hwContext::pushDeferredCall(const DeferredCall &c)
@@ -930,11 +940,6 @@ void hwContext::renderImpl(hwHInstance hi)
         m_d3dctx->PSSetConstantBuffers(0, 1, &m_rs_constant_buffer);
     }
 
-	// update shadow buffer
-	{
-		m_d3dctx->PSSetConstantBuffers(1, 1, &shadowBuffer);
-	}
-
 	// set texture sampler state
 	{
 		D3D11_SAMPLER_DESC samplerDesc;
@@ -1023,6 +1028,9 @@ void hwContext::renderImpl(hwHInstance hi)
 		m_d3dctx->PSSetShaderResources(7, 1, &reflectionSRV2);
 
 		m_d3dctx->PSSetShaderResources(8, 1, &shadowSRV);
+
+		//update shadow buffer
+		m_d3dctx->PSSetShaderResources(9, 1, &bufferSRV);
 		
     }
 

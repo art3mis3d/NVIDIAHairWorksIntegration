@@ -96,6 +96,8 @@ namespace UTJ
         IntPtr shadowMapPointer = IntPtr.Zero;
         IntPtr shadowParamsPointer = IntPtr.Zero;
 
+        RenderTexture dummyTex;
+
         public CommandBuffer GetCommandBuffer()
         {
             if (m_cb == null)
@@ -143,11 +145,11 @@ namespace UTJ
             }
 
             m_BufGrabShadowParams.Clear();
-            Graphics.SetRandomWriteTarget(2, m_ShadowParamsCB, true);
            
+            Graphics.SetRandomWriteTarget(1, m_ShadowParamsCB, true);
+            Graphics.SetRenderTarget(dummyTex);
             m_BufGrabShadowParams.DrawProcedural(Matrix4x4.identity, m_CopyShadowParamsMaterial, 0, MeshTopology.Points, 1);
             Graphics.ExecuteCommandBuffer(m_BufGrabShadowParams);
-            
             Graphics.ClearRandomWriteTargets();
         }
 
@@ -208,23 +210,42 @@ namespace UTJ
 
             m_CopyShadowParamsMaterial = new Material(shadowCopyShader);
 
-            m_ShadowParamsCB = new ComputeBuffer(1, 368, ComputeBufferType.Default);
+            m_ShadowParamsCB = new ComputeBuffer(1, 368);
             m_BufGrabShadowParams = new CommandBuffer();
             m_BufGrabShadowParams.name = "Grab shadow params";
 
             GetCommandBuffer();
 
             Shader.EnableKeyword("SHADOWS_SPLIT_SPHERES");
+
+           
+        }
+
+        void Start()
+        {
+            dummyTex = RenderTexture.GetTemporary(Screen.width, Screen.height, 0, RenderTextureFormat.Default, RenderTextureReadWrite.Default);
         }
 
         void OnDisable()
         {
             GetInstances().Remove(this);
             hwi.hwSetShadowTexture(IntPtr.Zero);
-            hwi.hwSetShadowParams(IntPtr.Zero);
+            unsafe
+            {
+                hwi.hwSetShadowParams(IntPtr.Zero.ToPointer());
+            }
             shadowMapPointer = IntPtr.Zero;
             shadowParamsPointer = IntPtr.Zero;
             m_ShadowParamsCB.Release();
+
+            if (dummyTex == null)
+                return;
+
+            if (!dummyTex.Equals(RenderTexture.active))
+            {
+                dummyTex.Release();
+                dummyTex = null;
+            }
         }
 
         void Update()
@@ -251,7 +272,10 @@ namespace UTJ
                 shadowMapPointer = IntPtr.Zero;
                 shadowParamsPointer = IntPtr.Zero;
                 hwi.hwSetShadowTexture(IntPtr.Zero);
-                hwi.hwSetShadowParams(IntPtr.Zero);
+                unsafe
+                {
+                    hwi.hwSetShadowParams(IntPtr.Zero.ToPointer());
+                }
                 return;
             }
 
@@ -259,7 +283,10 @@ namespace UTJ
 
             if (shadowParamsPointer == IntPtr.Zero)
             {
-                hwi.hwSetShadowParams(GetShadowParamsPointer());
+                unsafe
+                {
+                    hwi.hwSetShadowParams(GetShadowParamsPointer().ToPointer());
+                }
                 
             }
 
