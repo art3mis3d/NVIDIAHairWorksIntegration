@@ -110,6 +110,12 @@ namespace UTJ
         private List<ReflectionProbe> probeInstances;
         private float probeBlendAmount;
 
+        // The UpdateBones() method is very expensive. Optimized by updating fixed amount per second. Not per frame. 
+        private float accumTime = 0;
+        public static float boneUpdatesPerSecond = 60;
+        float stepsize;
+        bool updateBones;
+
         void RepaintWindow()
         {
 #if UNITY_EDITOR
@@ -580,6 +586,7 @@ namespace UTJ
             m_params.m_enable = true;
             reflectionProbes = FindObjectsOfType<ReflectionProbe>();
             probeInstances = new List<ReflectionProbe>(reflectionProbes.Length);
+            stepsize = 1.0f / boneUpdatesPerSecond;
         }
 
         void OnDisable()
@@ -601,6 +608,16 @@ namespace UTJ
         void Update()
         {
             if (!m_hasset) { return; }
+
+            if(accumTime + Time.deltaTime > stepsize)
+            {
+                accumTime = 0;
+                updateBones = true;
+            }
+            else
+            {
+                accumTime += Time.deltaTime;
+            }
            
 
             if (m_probe_mesh != null)
@@ -627,7 +644,12 @@ namespace UTJ
 
        void OnWillRenderObject()
         {
-            UpdateBones();
+            if (updateBones)
+            {
+                UpdateBones();
+                updateBones = false;
+            }
+
             hwi.hwInstanceSetDescriptor(m_hinstance, ref m_params);
 
             if (m_skinning_matrices != null)
@@ -707,7 +729,8 @@ namespace UTJ
             if (cam != null)
             {
                 Matrix4x4 V = cam.worldToCameraMatrix;
-                Matrix4x4 P = GL.GetGPUProjectionMatrix(cam.projectionMatrix, DoesRenderToTexture(cam));
+                //DoesRenderToTexture does not account for image effects or msaa. Force true for now. False only useful in forward without image effects or msaa, unlikely use case.
+                Matrix4x4 P = GL.GetGPUProjectionMatrix(cam.projectionMatrix, /*DoesRenderToTexture(cam)*/ true);
                 float fov = cam.fieldOfView;
                 hwi.hwSetViewProjection(ref V, ref P, fov);
                 HairLight.AssignLightData();

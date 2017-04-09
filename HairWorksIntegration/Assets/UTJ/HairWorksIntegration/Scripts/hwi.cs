@@ -559,7 +559,7 @@ namespace UTJ
             //// for debug
             //if(Application.isEditor)
             //{
-            //    hwSetLogCallback(LogCallback);
+              // hwSetLogCallback(LogCallback);
             //}
         }
     }

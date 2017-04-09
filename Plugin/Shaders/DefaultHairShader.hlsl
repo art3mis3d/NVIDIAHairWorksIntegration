@@ -30,12 +30,13 @@ GFSDK_HAIR_DECLARE_SHADER_RESOURCES(t0, t1, t2);
 Texture2D	g_rootHairColorTexture	: register(t3);
 Texture2D	g_tipHairColorTexture	: register(t4);
 Texture2D   g_specularTexture       : register(t5);
+Texture2D   g_strandTexture			: register(t6);
 
-TextureCube g_reflectionProbe1		: register(t6);
-TextureCube g_reflectionProbe2		: register(t7);
+TextureCube g_reflectionProbe1		: register(t7);
+TextureCube g_reflectionProbe2		: register(t8);
 
-Texture2D g_shadowTexture			: register(t8);
-StructuredBuffer<ShadowParams> shadowParams : register(t9);
+Texture2D g_shadowTexture			: register(t9);
+StructuredBuffer<ShadowParams> shadowParams : register(t10);
 
 cbuffer cbPerFrame : register(b0)
 {

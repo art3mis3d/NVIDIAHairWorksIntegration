@@ -999,7 +999,7 @@ void hwContext::renderImpl(hwHInstance hi)
         g_hw_sdk->GetShaderResources(v.iid, SRVs);
         m_d3dctx->PSSetShaderResources(0, GFSDK_HAIR_NUM_SHADER_RESOUCES, SRVs);
 
-		ID3D11ShaderResourceView* ppTextureSRVs[3];
+		ID3D11ShaderResourceView* ppTextureSRVs[4];
 
 		if (g_hw_sdk->GetTextureSRV(v.iid, GFSDK_HAIR_TEXTURE_ROOT_COLOR, &ppTextureSRVs[0]) != GFSDK_HAIR_RETURN_OK) {
 			
@@ -1022,15 +1022,22 @@ void hwContext::renderImpl(hwHInstance hi)
 
 		m_d3dctx->PSSetShaderResources(5, 1, &ppTextureSRVs[2]);
 
+		if (g_hw_sdk->GetTextureSRV(v.iid, GFSDK_HAIR_TEXTURE_STRAND, &ppTextureSRVs[3]) != GFSDK_HAIR_RETURN_OK)
+		{
+			hwLog("GFSDK_HairSDK::GetTextureSRV(%d, %d) failed.\n", hi, GFSDK_HAIR_TEXTURE_STRAND);
+		}
+
+		m_d3dctx->PSSetShaderResources(6, 1, &ppTextureSRVs[3]);
+
 		// set reflection probe
-		m_d3dctx->PSSetShaderResources(6, 1, &reflectionSRV1);
+		m_d3dctx->PSSetShaderResources(7, 1, &reflectionSRV1);
 
-		m_d3dctx->PSSetShaderResources(7, 1, &reflectionSRV2);
+		m_d3dctx->PSSetShaderResources(8, 1, &reflectionSRV2);
 
-		m_d3dctx->PSSetShaderResources(8, 1, &shadowSRV);
+		m_d3dctx->PSSetShaderResources(9, 1, &shadowSRV);
 
 		//update shadow buffer
-		m_d3dctx->PSSetShaderResources(9, 1, &bufferSRV);
+		m_d3dctx->PSSetShaderResources(10, 1, &bufferSRV);
 		
     }
 
