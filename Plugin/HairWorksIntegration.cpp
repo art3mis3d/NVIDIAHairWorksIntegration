@@ -227,7 +227,7 @@ hwExport hwHAsset hwAssetLoadFromFile(const char *path, float unit)
 		hwConversionSettings settings;
 		ZeroMemory(&settings, sizeof(settings));
 		settings.m_targetUpAxisHint = GFSDK_HAIR_Y_UP;
-		// Matches Unity Scale
+		// Allow user to specify scale
 		settings.m_targetSceneUnit = unit;
 		settings.m_targetHandednessHint = GFSDK_HAIR_RIGHT_HANDED;
         return ctx->assetLoadFromFile(path, &settings);

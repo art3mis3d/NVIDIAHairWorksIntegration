@@ -159,24 +159,6 @@ void hwContext::finalize()
 		reflectionSRV2 = nullptr;
 	}
 
-	if (reflectionTexture1)
-	{
-		reflectionTexture1->Release();
-		reflectionTexture1 = nullptr;
-	}
-
-	if (reflectionTexture2)
-	{
-		reflectionTexture2->Release();
-		reflectionTexture2 = nullptr;
-	}
-
-	if (shadowTexture)
-	{
-		shadowTexture->Release();
-		shadowTexture = nullptr;
-	}
-
 	if (shadowSRV)
 	{
 		shadowSRV->Release();
@@ -428,8 +410,6 @@ void hwContext::assetGetDefaultDescriptor(hwHAsset ha, hwHairDescriptor &o_desc)
     }
 }
 
-
-
 hwInstanceData& hwContext::newInstanceData()
 {
     auto i = std::find_if(m_instances.begin(), m_instances.end(), [](const hwInstanceData &v) { return !v; });
@@ -515,7 +495,7 @@ void hwContext::instanceSetTexture(hwHInstance hi, hwTextureType type, hwTexture
 
 		if (g_hw_sdk->GetTextureSRV(v.iid, type, &oldSRV) != GFSDK_HAIR_RETURN_OK)
 		{
-			hwLog("GFSDK_HairSDK::GetTextureSRV(%d, %d) failed.\n", hi, type);
+			hwLog("Texture Not Found.\n", hi, type);
 		}
 		else
 		{
@@ -539,10 +519,12 @@ void hwContext::instanceSetTexture(hwHInstance hi, hwTextureType type, hwTexture
 	ID3D11ShaderResourceView* srv;
 	D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc;
 	ZeroMemory(&SRVDesc, sizeof(SRVDesc));
+
 	SRVDesc.Format = texDesc.Format;
 	SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 	SRVDesc.Texture2D.MostDetailedMip = 0;
 	SRVDesc.Texture2D.MipLevels = texDesc.MipLevels;
+
 	m_d3ddev->CreateShaderResourceView(tex, &SRVDesc, &srv);
 
     if (!srv || g_hw_sdk->SetTextureSRV(v.iid, type, srv) != GFSDK_HAIR_RETURN_OK)
@@ -563,12 +545,6 @@ void hwContext::setShadowTexture(ID3D11Resource *shadowTex)
 	{
 		shadowSRV->Release();
 		shadowSRV = nullptr;
-	}
-
-	if (shadowTexture)
-	{
-		shadowTexture->Release();
-		shadowTexture = nullptr;
 	}
 
 
@@ -668,7 +644,14 @@ void hwContext::setShadowParams(void* shadowCB)
 	shadowBuffer = static_cast<ID3D11Buffer*>(shadowCB);
 
 	if (!shadowBuffer)
+	{
+		if (bufferSRV)
+		{
+			bufferSRV->Release();
+			bufferSRV = nullptr;
+		}
 		return;
+	}
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
 	ZeroMemory(&srvDesc, sizeof(srvDesc));
@@ -848,13 +831,6 @@ void hwContext::setReflectionProbeImpl(ID3D11Resource *tex1, ID3D11Resource *tex
 			reflectionSRV1->Release();
 			reflectionSRV1 = nullptr;
 		}
-
-		if (reflectionTexture1)
-		{
-			reflectionTexture1->Release();
-			reflectionTexture1 = nullptr;
-		}
-		return;
 	}
 
 	if (!tex2)
@@ -864,14 +840,10 @@ void hwContext::setReflectionProbeImpl(ID3D11Resource *tex1, ID3D11Resource *tex
 			reflectionSRV2->Release();
 			reflectionSRV2 = nullptr;
 		}
-
-		if (reflectionTexture2)
-		{
-			reflectionTexture2->Release();
-			reflectionTexture2 = nullptr;
-		}
-		return;
 	}
+
+	if (!tex1 || !tex2)
+		return;
 
 	if (tex1 == reflectionTexture1 && tex2 == reflectionTexture2)
 		return;
@@ -912,13 +884,11 @@ void hwContext::setReflectionProbeImpl(ID3D11Resource *tex1, ID3D11Resource *tex
 
 	if (cubemap1)
 	{
-		cubemap1->Release();
 		cubemap1 = nullptr;
 	}
 
 	if (cubemap2)
 	{
-		cubemap2->Release();
 		cubemap2 = nullptr;
 	}
 }
@@ -1034,9 +1004,10 @@ void hwContext::renderImpl(hwHInstance hi)
 
 		m_d3dctx->PSSetShaderResources(8, 1, &reflectionSRV2);
 
+		// set shadow texture
 		m_d3dctx->PSSetShaderResources(9, 1, &shadowSRV);
 
-		//update shadow buffer
+		// update shadow matrices buffer
 		m_d3dctx->PSSetShaderResources(10, 1, &bufferSRV);
 		
     }

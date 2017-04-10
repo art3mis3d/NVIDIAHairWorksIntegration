@@ -51,7 +51,7 @@ struct hwLightData
     hwFloat4 position; // w: range
     hwFloat4 direction;
     hwFloat4 color;
-	int angle; int pad2[3];
+	int angle; int pad2[3]; //spot angle
 
     hwLightData()
         : type(hwELightType_Directional)
@@ -76,7 +76,7 @@ struct hwConstantBuffer
 	//GI Parameters
 	hwFloat4 gi_params;
 
-	//Normal Constant Buffer
+	
     int num_lights; int pad0[3];
     hwLightData lights[hwMaxLights];
     GFSDK_HairShaderConstantBuffer hw;
@@ -195,7 +195,6 @@ private:
     ID3D11Buffer            *m_rs_constant_buffer;
 
     hwConstantBuffer        m_cb;
-	hwShadowParamBuffer		m_ShadowParams;
 
 	ID3D11Resource *reflectionTexture1 = nullptr;
 	ID3D11Resource *reflectionTexture2 = nullptr;

@@ -12,9 +12,10 @@ struct LightData
     float4 position;    // w: range
     float4 direction;
     float4 color;
-	int4 angle;
+	int4 angle; // spot light angle
 };
 
+// shadow matrices and other related parameters
 struct ShadowParams
 {
 	row_major float4x4 worldToShadow[4];
@@ -26,20 +27,22 @@ struct ShadowParams
 
 
 GFSDK_HAIR_DECLARE_SHADER_RESOURCES(t0, t1, t2);
-
+// Hair Textures
 Texture2D	g_rootHairColorTexture	: register(t3);
 Texture2D	g_tipHairColorTexture	: register(t4);
 Texture2D   g_specularTexture       : register(t5);
 Texture2D   g_strandTexture			: register(t6);
-
+// Reflection Probe Textures
 TextureCube g_reflectionProbe1		: register(t7);
 TextureCube g_reflectionProbe2		: register(t8);
-
+// Shadowmap
 Texture2D g_shadowTexture			: register(t9);
+// Shadow Matrices
 StructuredBuffer<ShadowParams> shadowParams : register(t10);
 
 cbuffer cbPerFrame : register(b0)
 {
+	// Spherical Harmonics Data
 	float4 shAr;
 	float4 shAg;
 	float4 shAb;
@@ -47,20 +50,13 @@ cbuffer cbPerFrame : register(b0)
 	float4 shBg;
 	float4 shBb;
 	float4 shC;
+
 	float4 gi_params;	//	x: light probe intensity y: reflection probe intensity z: specular strength  w: probe blend amount
+
     int4                        g_numLights;        // x: num lights
     LightData                   g_lights[MaxLights];
     GFSDK_Hair_ConstantBuffer   g_hairConstantBuffer;
 }
-
-/*cbuffer cbShadowParams : register(b1)
-{
-	row_major float4x4 worldToShadow[4];
-	float4 shadowSplitSpheres[4];
-	float4 shadowSplitSqRadii;
-	float4 LightSplitsNear;
-	float4 LightSplitsFar;
-}*/
 
 cbuffer UnityPerDraw
 {
@@ -77,14 +73,12 @@ cbuffer UnityPerDraw
     float4 unity_WorldTransformParams; // w is usually 1.0, or -1.0 for odd-negative scale transforms
 }
 
-
+// Standard Trilinear Sampler
 SamplerState texSampler: register(s0);
-//SamplerComparisonState shadowSampler : register(s1);
+// Mip Sampler For Shadows
 SamplerState shadowSampler : register(s1);
 
-//uniform RWStructuredBuffer<ShadowParams> shadowParams : register(u1);
-
-
+// From Unity cgincludes
 inline float4 getCascadeWeights(float3 wpos, float z)
 {
 	float4 zNear = float4(z >= shadowParams[0].LightSplitsNear);
@@ -93,7 +87,7 @@ inline float4 getCascadeWeights(float3 wpos, float z)
 	return weights;
 }
 
-
+// world to shadowmap split spheres. From Unity cgincludes
 inline float4 getCascadeWeights_splitSpheres(float3 wpos)
 {
 	float3 fromCenter0 = wpos.xyz - shadowParams[0].shadowSplitSpheres[0].xyz;
@@ -106,14 +100,9 @@ inline float4 getCascadeWeights_splitSpheres(float3 wpos)
 	return weights;
 }
 
-
+// world to shadowmap coordinates. from Unity cgincludes
 inline float4 getShadowCoord(float4 wpos, float4 cascadeWeights)
 {
-	/*float3 sc0 = mul(worldToShadow[0], wpos).xyz;
-	float3 sc1 = mul(worldToShadow[1], wpos).xyz;
-	float3 sc2 = mul(worldToShadow[2], wpos).xyz;
-	float3 sc3 = mul(worldToShadow[3], wpos).xyz;*/
-
 	float3 sc0 = mul(wpos, shadowParams[0].worldToShadow[0]).xyz;
 	float3 sc1 = mul(wpos, shadowParams[0].worldToShadow[1]).xyz;
 	float3 sc2 = mul(wpos, shadowParams[0].worldToShadow[2]).xyz;
@@ -125,13 +114,7 @@ inline float4 getShadowCoord(float4 wpos, float4 cascadeWeights)
 	return shadowMapCoordinate;
 }
 
-inline float sampleShadow(Texture2D shadowTex, SamplerComparisonState state, float4 coord)
-{
-	return shadowTex.SampleCmpLevelZero(state, coord.xy, coord.z).r;
-	//return shadowTex.Sample(texSampler, coord.xy);
-}
-
-
+// shperical harmonics/ light probes lighting
 inline float3 ShadeSH9(float4 Ar, float4 Ag, float4 Ab, float4 Br, float4 Bg, float4 Bb, float4 C, float4 normal)
 {
 	float3 x1, x2, x3;
@@ -155,7 +138,7 @@ inline float3 ShadeSH9(float4 Ar, float4 Ag, float4 Ab, float4 Br, float4 Bg, fl
 	else return float3 (0, 0, 0);
 }
 
-
+// simple spec map to mip level
 float GetSpecPowToMip(float3 specColor)
 {
 	float fSpecPow = dot(specColor, float3(0.2126f, 0.7152f, 0.0722f));
@@ -177,52 +160,63 @@ float GetSpecPowToMip(float3 specColor)
 
 	uint nMips = min(nMips1, nMips2);
 
-	//float roughness2 = pow(2.0f / (fSpecPow + 2.0f), 0.25f);
-
 	return lerp(0, nMips, 1.0f - fSpecPow);
 }
 
 [earlydepthstencil]
 float4 ps_main(GFSDK_Hair_PixelShaderInput input) : SV_Target
 {
+	// Get Shader Attributes
     GFSDK_Hair_ShaderAttributes attr = GFSDK_Hair_GetShaderAttributes(input, g_hairConstantBuffer);
-    GFSDK_Hair_Material mat = g_hairConstantBuffer.defaultMaterial;
+	// Get Material
+	GFSDK_Hair_Material mat = g_hairConstantBuffer.defaultMaterial;
 
+	// if using specular sample spec texture
 	if (g_hairConstantBuffer.useSpecularTexture)
 		mat.specularColor.rgb = g_specularTexture.SampleLevel(texSampler, attr.texcoords.xy, 0).rgb;
 
+	// init output to black
 	float4 r = float4 (0, 0, 0, 1);
 
+	// if set to debug mode return visualization.
     if (GFSDK_Hair_VisualizeColor(g_hairConstantBuffer, mat, attr, r.rgb)) {
         return r;
     }
 
+	// sample hair color
     float3 hairColor = GFSDK_Hair_SampleHairColorTex(g_hairConstantBuffer, mat, texSampler, g_rootHairColorTexture, g_tipHairColorTexture, attr.texcoords.xyz).rgb;
 
+	// convert worldspace coordinates to shadowmap uv coordinates
 	float4 cascadeWeights =  getCascadeWeights_splitSpheres(attr.P.xyz);
 	float4 shadowCoords = getShadowCoord(float4(attr.P.xyz, 1), cascadeWeights);
-	//float shadow = sampleShadow(g_shadowTexture, shadowSampler, shadowCoords);
 	
+	// sample shadow map and perform pcf filtering
 	float filteredDepth = GFSDK_Hair_ShadowFilterDepth(g_shadowTexture, shadowSampler, shadowCoords.xy, shadowCoords.z, 1.0);
 	float shadow = GFSDK_Hair_ShadowLitFactor(g_hairConstantBuffer, mat, filteredDepth);
 
+	// for each light
     for (int i = 0; i < g_numLights.x; i++)
     {
+		// init some values
         float3 Lcolor = g_lights[i].color.rgb;
         float3 Ldir = float3(0,0,0);
         float atten = 1.0;
+
+		// if directional light
         if (g_lights[i].type.x == LightType_Directional) {
             Ldir = g_lights[i].direction.xyz;
+			// multiply shadow factor
 			Lcolor *= shadow;
         }
         else {
+			// point + spot light stuff
             float range = g_lights[i].position.w;
             float3 diff = g_lights[i].position.xyz - attr.P;
             Ldir = normalize(diff);
             atten = max(1.0f - dot(diff, diff) / (range*range), 0.0);
 
 			// Spot Light Attenuation
-			// Does not use cookie texture but approximation is quite accurate
+			// Does not use cookie texture but this approximation is quite accurate
 			if (g_lights[i].type.x == LightType_Spot)
 			{
 				float spotEffect = dot(g_lights[i].direction.xyz, -Ldir);
@@ -244,32 +238,44 @@ float4 ps_main(GFSDK_Hair_PixelShaderInput input) : SV_Target
 			}
         }
 
+		// calc diffuse lighting
 		float diffuse = GFSDK_Hair_ComputeHairDiffuseShading(Ldir, attr.T, attr.N, mat.diffuseScale, mat.diffuseBlend);
+		// calc specular lighting
 		float specular = GFSDK_Hair_ComputeHairSpecularShading(Ldir, attr, mat);
 
+		// add some glint to ambient light
 		float GlintAmbient = 0;
 
+		// if using glint
 		if (mat.glintStrength > 0)
 		{
+			// calc glint lighting
 			float glint = GFSDK_Hair_ComputeHairGlint(g_hairConstantBuffer, mat, attr);
 			specular *= lerp(1.0, glint, mat.glintStrength);
 
+			// add some glint to ambient light
 			float Luminance = dot(Lcolor, float3(0.3, 0.5, 0.2));	// Copied from HairWorks viewer.
 			GlintAmbient = mat.glintStrength * glint * Luminance;
 		}
 
-		
+		// add direct plus ambient light to output
 		r.rgb += ((hairColor.rgb  * diffuse) + (specular * mat.specularColor.rgb)) * Lcolor.rgb * atten + GlintAmbient * atten * hairColor.rgb;
     }
-    //r.rgb = saturate(attr.N.xyz)*0.5+0.5;
+
+	// calc transparency
 	r.a = GFSDK_Hair_ComputeAlpha(g_hairConstantBuffer, mat, attr);
 
+	// add spherical harmonics or light probes
 	r.rgb += (hairColor * ShadeSH9(shAr, shAg, shAb, shBr, shBg, shBb, shC, float4(attr.N, 1)) * gi_params.x);
 
+	// calc mip level to use
 	float mip = GetSpecPowToMip(mat.specularColor * gi_params.z);
+
+	// sample reflection probes
 	float3 probe1 = g_reflectionProbe1.SampleLevel(texSampler, attr.N, mip).rgb;
 	float3 probe2 = g_reflectionProbe1.SampleLevel(texSampler, attr.N, mip).rgb;
 
+	// add reflection probes contribution
 	r.rgb += (hairColor * lerp(probe1, probe2, gi_params.w) * gi_params.y);
 	
     return r;
