@@ -510,7 +510,7 @@ namespace UTJ
         [DllImport("HairWorksIntegration")] public static extern Bool       hwShaderRelease(HShader sid);
         [DllImport("HairWorksIntegration")] public static extern Bool       hwShaderReload(HShader sid);
 
-        [DllImport("HairWorksIntegration")] public static extern HAsset     hwAssetLoadFromFile(string path);
+        [DllImport("HairWorksIntegration")] public static extern HAsset     hwAssetLoadFromFile(string path, float unit);
         [DllImport("HairWorksIntegration")] public static extern Bool       hwAssetRelease(HAsset aid);
         [DllImport("HairWorksIntegration")] public static extern Bool       hwAssetReload(HAsset aid);
         [DllImport("HairWorksIntegration")] public static extern int        hwAssetGetNumBones(HAsset aid);

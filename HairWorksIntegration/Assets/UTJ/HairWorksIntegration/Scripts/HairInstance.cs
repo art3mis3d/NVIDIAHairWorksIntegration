@@ -40,6 +40,8 @@ namespace UTJ
         public string m_hair_shader = "UTJ/HairWorksIntegration/DefaultHairShader.cso";
         public Transform m_root_bone;
         public bool m_invert_bone_x = true;
+        public Mesh m_probe_mesh;
+        public float scaleFactor = 1f;
         public hwi.Descriptor m_params = hwi.Descriptor.default_value;
         hwi.HShader m_hshader = hwi.HShader.NullHandle;
         hwi.HAsset m_hasset = hwi.HAsset.NullHandle;
@@ -50,9 +52,6 @@ namespace UTJ
         Matrix4x4[] m_skinning_matrices = null;
         IntPtr m_skinning_matrices_ptr = IntPtr.Zero;
         Matrix4x4 m_conversion_matrix;
-
-        public Mesh m_probe_mesh;
-
 
         public uint shader_id { get { return m_hshader; } }
         public uint asset_id { get { return m_hasset; } }
@@ -166,7 +165,7 @@ namespace UTJ
             }
 
             // load & create instance
-            if (m_hasset = hwi.hwAssetLoadFromFile(Application.streamingAssetsPath + "/" + path_to_apx))
+            if (m_hasset = hwi.hwAssetLoadFromFile(Application.streamingAssetsPath + "/" + path_to_apx, scaleFactor * 100f))
             {
                 m_hair_asset = path_to_apx;
                 m_hinstance = hwi.hwInstanceCreate(m_hasset);
@@ -265,6 +264,8 @@ namespace UTJ
                 {
                     m_conversion_matrix *= Matrix4x4.Scale(new Vector3(-1.0f, 1.0f, 1.0f));
                 }
+
+                
 
                 // m_conversion_matrix is constant, optimize by premultiplying with m_inv_bindpose
                 for (int i = 0; i < num_bones; ++i)
@@ -599,6 +600,8 @@ namespace UTJ
         {
             LoadHairShader(m_hair_shader);
             LoadHairAsset(m_hair_asset, false);
+
+            // Change depth stencil to match reversed z-buffer in 5.5
 #if UNITY_5_5_OR_NEWER
             hwi.hwInitializeDepthStencil(true);
 #endif

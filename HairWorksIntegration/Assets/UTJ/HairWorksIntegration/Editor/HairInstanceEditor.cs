@@ -56,8 +56,6 @@ namespace UTJ
 
             DrawDefaultInspector();
 
-            GUILayout.Space(10);
-
             showRendering = EditorGUILayout.Foldout(showRendering, "Rendering", EditorStyles.foldout);
 
             if (showRendering)
@@ -77,8 +75,6 @@ namespace UTJ
                     t.reflectionProbeSpecularity = EditorGUILayout.FloatField("Specular Strength", t.reflectionProbeSpecularity);
                 }
             }
-
-            GUILayout.Space(10);
 
             showTextures = EditorGUILayout.Foldout(showTextures, "Textures", EditorStyles.foldout);
 

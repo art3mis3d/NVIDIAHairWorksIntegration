@@ -58,7 +58,7 @@ hwExport hwHShader      hwShaderLoadFromFile(const char *path);
 hwExport void           hwShaderRelease(hwHShader sid);
 hwExport void           hwShaderReload(hwHShader sid);
 
-hwExport hwHAsset       hwAssetLoadFromFile(const char *path);
+hwExport hwHAsset       hwAssetLoadFromFile(const char *path, float unit);
 hwExport void           hwAssetRelease(hwHAsset aid);
 hwExport void           hwAssetReload(hwHAsset aid);
 hwExport int            hwAssetGetNumBones(hwHAsset aid);

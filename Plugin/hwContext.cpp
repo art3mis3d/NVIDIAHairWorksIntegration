@@ -1047,7 +1047,6 @@ void hwContext::renderImpl(hwHInstance hi)
     {
         hwLog("GFSDK_HairSDK::RenderHairs(%d) failed.\n", hi);
     }
-
     // render indicators
     g_hw_sdk->RenderVisualization(v.iid);
 }

@@ -220,11 +220,17 @@ hwExport void hwShaderReload(hwHShader sid)
 }
 
 
-hwExport hwHAsset hwAssetLoadFromFile(const char *path)
+hwExport hwHAsset hwAssetLoadFromFile(const char *path, float unit)
 {
     if (path == nullptr || path[0]=='\0') { return hwNullHandle; }
     if (auto ctx = hwGetContext()) {
-        return ctx->assetLoadFromFile(path, nullptr);
+		hwConversionSettings settings;
+		ZeroMemory(&settings, sizeof(settings));
+		settings.m_targetUpAxisHint = GFSDK_HAIR_Y_UP;
+		// Matches Unity Scale
+		settings.m_targetSceneUnit = unit;
+		settings.m_targetHandednessHint = GFSDK_HAIR_RIGHT_HANDED;
+        return ctx->assetLoadFromFile(path, &settings);
     }
     return hwNullHandle;
 }
