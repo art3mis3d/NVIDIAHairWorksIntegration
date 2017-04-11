@@ -28,7 +28,7 @@ Incidentally, the screenshots shown here are from the samples included in the SD
 
 3.  Import Built DLL
   * Build the visual studio project, when finsihed this will automatically copy the integration DLL and shader to the Unity project
-  * Or import the package found under the Packages folder this will copy a prebuilt DLL and shader meaning that you will not have to build anything manually. Usefull if you don't plan on modifying the underlying code.
+  * Or import the package found under the Packages folder this will copy a prebuilt DLL and shader meaning that you will not have to build anything manually. Useful if you don't plan on modifying the underlying code.
 
 
 ### Hair Instance Component
@@ -45,6 +45,7 @@ Invert_bone_x: When checked the X coordinate of the bone will be inverted. There
 Params: Set the simulation parameters. These parameters are also included in the .apx file, which is set by default. Use this for fine adjustment.
 
 **Hair Scale**
+
 With this fork of HairWorks it is no longer necessary to set the scale factor of the FBX to 100.
 There is now a scale factor field in the Hair Instance script that will allow you to adjust scale manually should it be incorrect.
 By default HairWorks will now attempt to match the normal size of the FBX in Unity.
@@ -59,7 +60,7 @@ The Hair Light Component now has some parameters for shadow mapping.
 Shadows can be enabled/disabled per light and their resolution can be set as well.
 Supports soft shadows.
 Currently shadows can only be received from a single directional light.
-Point light and Spot light shadows coming soon.
+Point light and Spot light shadows are coming soon.
 
 ## Warning
 **The NVIDIA GameWorks SDK, including Hair Works, obligates you to display the NVIDIA logo when using it**
