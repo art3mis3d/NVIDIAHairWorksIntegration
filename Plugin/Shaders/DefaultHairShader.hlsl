@@ -1,4 +1,4 @@
-#include "GFSDK_HairWorks_ShaderCommon.h" 
+#include <Nv/HairWorks/Shader/NvHairShaderCommon.h>
 
 #define MaxLights               8
 
@@ -26,19 +26,19 @@ struct ShadowParams
 };
 
 
-GFSDK_HAIR_DECLARE_SHADER_RESOURCES(t0, t1, t2);
+NV_HAIR_DECLARE_SHADER_RESOURCES(t0, t1, t2);
 // Hair Textures
-Texture2D	g_rootHairColorTexture	: register(t3);
-Texture2D	g_tipHairColorTexture	: register(t4);
-Texture2D   g_specularTexture       : register(t5);
-Texture2D   g_strandTexture			: register(t6);
+Texture2D	g_rootHairColorTexture	: register(t5);
+Texture2D	g_tipHairColorTexture	: register(t6);
+Texture2D   g_specularTexture       : register(t7);
+Texture2D   g_strandTexture			: register(t8);
 // Reflection Probe Textures
-TextureCube g_reflectionProbe1		: register(t7);
-TextureCube g_reflectionProbe2		: register(t8);
+TextureCube g_reflectionProbe1		: register(t9);
+TextureCube g_reflectionProbe2		: register(t10);
 // Shadowmap
-Texture2D g_shadowTexture			: register(t9);
+Texture2D g_shadowTexture			: register(t11);
 // Shadow Matrices
-StructuredBuffer<ShadowParams> shadowParams : register(t10);
+StructuredBuffer<ShadowParams> shadowParams : register(t12);
 
 cbuffer cbPerFrame : register(b0)
 {
@@ -55,7 +55,7 @@ cbuffer cbPerFrame : register(b0)
 
     int4                        g_numLights;        // x: num lights
     LightData                   g_lights[MaxLights];
-    GFSDK_Hair_ConstantBuffer   g_hairConstantBuffer;
+	NvHair_ConstantBuffer   g_hairConstantBuffer;
 }
 
 cbuffer UnityPerDraw
@@ -164,12 +164,14 @@ float GetSpecPowToMip(float3 specColor)
 }
 
 [earlydepthstencil]
-float4 ps_main(GFSDK_Hair_PixelShaderInput input) : SV_Target
+float4 ps_main(NvHair_PixelShaderInput input) : SV_Target
 {
 	// Get Shader Attributes
-    GFSDK_Hair_ShaderAttributes attr = GFSDK_Hair_GetShaderAttributes(input, g_hairConstantBuffer);
+	NvHair_ShaderAttributes attr = NvHair_GetShaderAttributes(input, g_hairConstantBuffer);
+	// Flip Texture Coordinates vertically
+	attr.texcoords.y = 1.0f - attr.texcoords.y;
 	// Get Material
-	GFSDK_Hair_Material mat = g_hairConstantBuffer.defaultMaterial;
+	NvHair_Material mat = g_hairConstantBuffer.defaultMaterial;
 
 	// if using specular sample spec texture
 	if (g_hairConstantBuffer.useSpecularTexture)
@@ -179,20 +181,20 @@ float4 ps_main(GFSDK_Hair_PixelShaderInput input) : SV_Target
 	float4 r = float4 (0, 0, 0, 1);
 
 	// if set to debug mode return visualization.
-    if (GFSDK_Hair_VisualizeColor(g_hairConstantBuffer, mat, attr, r.rgb)) {
+    if (NvHair_VisualizeColor(g_hairConstantBuffer, mat, attr, r.rgb)) {
         return r;
     }
 
 	// sample hair color
-    float3 hairColor = GFSDK_Hair_SampleHairColorTex(g_hairConstantBuffer, mat, texSampler, g_rootHairColorTexture, g_tipHairColorTexture, attr.texcoords.xyz).rgb;
+    float3 hairColor = NvHair_SampleHairColorStrandTex(g_hairConstantBuffer, mat, texSampler, g_rootHairColorTexture, g_strandTexture, g_tipHairColorTexture, attr.texcoords).rgb;
 
 	// convert worldspace coordinates to shadowmap uv coordinates
 	float4 cascadeWeights =  getCascadeWeights_splitSpheres(attr.P.xyz);
 	float4 shadowCoords = getShadowCoord(float4(attr.P.xyz, 1), cascadeWeights);
 	
 	// sample shadow map and perform pcf filtering
-	float filteredDepth = GFSDK_Hair_ShadowFilterDepth(g_shadowTexture, shadowSampler, shadowCoords.xy, shadowCoords.z, 1.0);
-	float shadow = GFSDK_Hair_ShadowLitFactor(g_hairConstantBuffer, mat, filteredDepth);
+	float filteredDepth = NvHair_ShadowFilterDepth(g_shadowTexture, shadowSampler, shadowCoords.xy, shadowCoords.z, 1.0);
+	float shadow = NvHair_ShadowLitFactor(g_hairConstantBuffer, mat, filteredDepth);
 
 	// for each light
     for (int i = 0; i < g_numLights.x; i++)
@@ -239,9 +241,9 @@ float4 ps_main(GFSDK_Hair_PixelShaderInput input) : SV_Target
         }
 
 		// calc diffuse lighting
-		float diffuse = GFSDK_Hair_ComputeHairDiffuseShading(Ldir, attr.T, attr.N, mat.diffuseScale, mat.diffuseBlend);
+		float diffuse = NvHair_ComputeHairDiffuseShading(Ldir, attr.T, attr.N, mat.diffuseScale, mat.diffuseBlend);
 		// calc specular lighting
-		float specular = GFSDK_Hair_ComputeHairSpecularShading(Ldir, attr, mat);
+		float specular = NvHair_ComputeHairSpecularShading(Ldir, attr, mat);
 
 		// add some glint to ambient light
 		float GlintAmbient = 0;
@@ -250,7 +252,7 @@ float4 ps_main(GFSDK_Hair_PixelShaderInput input) : SV_Target
 		if (mat.glintStrength > 0)
 		{
 			// calc glint lighting
-			float glint = GFSDK_Hair_ComputeHairGlint(g_hairConstantBuffer, mat, attr);
+			float glint = NvHair_ComputeHairGlint(g_hairConstantBuffer, mat, attr);
 			specular *= lerp(1.0, glint, mat.glintStrength);
 
 			// add some glint to ambient light
@@ -263,7 +265,7 @@ float4 ps_main(GFSDK_Hair_PixelShaderInput input) : SV_Target
     }
 
 	// calc transparency
-	r.a = GFSDK_Hair_ComputeAlpha(g_hairConstantBuffer, mat, attr);
+	r.a = NvHair_ComputeAlpha(g_hairConstantBuffer, mat, attr);
 
 	// add spherical harmonics or light probes
 	r.rgb += (hairColor * ShadeSH9(shAr, shAg, shAb, shBr, shBg, shBb, shC, float4(attr.N, 1)) * gi_params.x);

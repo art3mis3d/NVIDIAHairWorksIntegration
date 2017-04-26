@@ -8,12 +8,12 @@
     #endif
 #endif
 
-typedef GFSDK_HairSDK                   hwSDK;
-typedef GFSDK_HairAssetID               hwAssetID;
-typedef GFSDK_HairInstanceID            hwInstanceID;
-typedef GFSDK_HairInstanceDescriptor    hwHairDescriptor;
-typedef GFSDK_HairConversionSettings    hwConversionSettings;
-typedef GFSDK_HAIR_TEXTURE_TYPE         hwTextureType;
+typedef NvHair::Sdk                   hwSDK;
+typedef NvHair::AssetId               hwAssetID;
+typedef NvHair::InstanceId           hwInstanceID;
+typedef NvHair::InstanceDescriptor    hwHairDescriptor;
+typedef NvHair::ConversionSettings    hwConversionSettings;
+typedef NvHair::TextureType::Enum         hwTextureType;
 
 typedef gfsdk_float3            hwFloat3;
 typedef gfsdk_float4            hwFloat4;
@@ -29,8 +29,8 @@ typedef ID3D11ShaderResourceView        hwSRV;
 typedef ID3D11RenderTargetView          hwRTV;
 
 typedef void(__stdcall *hwLogCallback)(const char *);
-#define hwNullAssetID       GFSDK_HairAssetID_NULL
-#define hwNullInstanceID    GFSDK_HairInstanceID_NULL
+#define hwNullAssetID       NvHair::ASSET_ID_NULL
+#define hwNullInstanceID    NvHair::INSTANCE_ID_NULL
 #define hwNullHandle        0xFFFFFFFF
 #define hwMaxLights         8
 

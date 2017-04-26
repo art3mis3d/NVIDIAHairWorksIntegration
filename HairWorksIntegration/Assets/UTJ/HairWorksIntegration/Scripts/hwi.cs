@@ -154,6 +154,8 @@ namespace UTJ
             public Vector4 m_stiffnessDampingCurve;   //! [0 - 1.0] curve values for stiffness damping
             public Vector4 m_bendStiffnessCurve;      //! [0 - 1.0] curve values for bend stiffness
             public Vector4 m_interactionStiffnessCurve;//! [0 - 1.0] curve values for interaction stiffness
+            [MarshalAs(UnmanagedType.I1)]
+            public bool m_useDynamicPin; //! [true/false] whether to turn on/off dynamic pin
 
             // lod controls
             [MarshalAs(UnmanagedType.I1)]
@@ -187,6 +189,10 @@ namespace UTJ
             public Matrix4x4 m_cullSphereInvTransform;    //!< inverse of general affine transform (scale, rotation, translation..) applied to a unit sphere centered at origin
 
             public int m_splineMultiplier;           //!< how many vertices are generated per each control hair segments in spline curves
+
+            public uint m_assetType;             //!< This value can be used to classify different types of hair in a game. (e.g. 0 = fur, 1 = hair, 2 = very long hair, etc.)
+            public uint m_assetPriority;         //!< This value can be used to sort assets via importance in a game.
+            public uint m_assetGroup;           //!< This can be used to cluster a set of assets to character grouping.
 
             // drawing option
             [MarshalAs(UnmanagedType.I1)]
@@ -224,10 +230,10 @@ namespace UTJ
             public int m_colorizeMode;               //!< [GFSDK_HAIR_COLORIZE_MODE] colorize hair based on various terms. See GFSDK_HAIR_COLORIZE_MODE.
 
 
-            const int num_textures = (int)TextureType.NUM_TEXTURES;
+            //const int num_textures = (int)TextureType.COUNT_OF;
 
             // texture control
-            public fixed int m_textureChannels[num_textures]; //!< texture chanel for each control textures.  
+            public fixed int m_textureChannels[14]; //!< texture chanel for each control textures.  
 
             // model to world transform
             public Matrix4x4 m_modelToWorld;              // render time transformation to offset hair from its simulated position
@@ -293,8 +299,8 @@ namespace UTJ
                 m_rootAlphaFalloff = 0.0f;
 
                 m_shadowSigma = 0.2f;
-                //m_castShadows = true;
-                //m_receiveShadows = true;
+                m_castShadows = true;
+                m_receiveShadows = true;
 
                 m_strandBlendMode = 0;
                 m_strandBlendScale = 1.0f;
@@ -317,6 +323,7 @@ namespace UTJ
                 m_pinStiffness = 1.0f;
                 m_tipStiffness = 0.0f;
                 m_useCollision = false;
+                m_useDynamicPin = false;
 
                 // default LOD parameters
                 m_enableLOD = false;
@@ -342,6 +349,9 @@ namespace UTJ
                 m_useCullSphere = false;
 
                 m_splineMultiplier = 4;
+                m_assetType = 0;
+                m_assetPriority = 0;
+                m_assetGroup = 0;
 
                 // visualization options
                 m_drawRenderHairs = true;
@@ -387,7 +397,7 @@ namespace UTJ
 
                     fixed (int* p = m_textureChannels)
                     {
-                        for (int i = 0; i < (int)TextureType.NUM_TEXTURES; i++)
+                        for (int i = 0; i < (int)TextureType.COUNT_OF; i++)
                         {
                             p[i] = 0;
                         }
@@ -457,22 +467,21 @@ namespace UTJ
 
         public enum TextureType
         {
-            DENSITY, //<! hair density map [ shape control ]
-            ROOT_COLOR, //<! color at the hair root [ shading ]
-            TIP_COLOR, //<! color at the hair tip [ shading ]
-            WIDTH,  //<! width  [ shape control ]
-            STIFFNESS,  //<! stiffness control [ simulation ]
-            ROOT_STIFFNESS, //<! stiffness control for root stiffness [simulation]
-            CLUMP_SCALE,  //<! clumpiness control [ shape control]
-            CLUMP_ROUNDNESS, //<! clumping noise [ shape control]
-            WAVE_SCALE, //<! waviness scale [ shape control ]
-            WAVE_FREQ, //<! waviness frequency [ shape control ]
-            STRAND, //<! texture along hair strand [ shading ]
-            LENGTH, //<! length control [shape control] 
-            SPECULAR, //<! specularity control [shading ] 
-            WEIGHTS, //!< weight texture for multiple material blending [control for all other textures]
-
-            NUM_TEXTURES
+            DENSITY,        ///< hair density map [ shape control ]
+            ROOT_COLOR,     ///< color at the hair root [ shading ]
+            TIP_COLOR,      ///< color at the hair tip [ shading ]
+            WIDTH,          ///< width  [ shape control ]
+            STIFFNESS,      ///< stiffness control [ simulation ]
+            ROOT_STIFFNESS, ///< stiffness control for root stiffness [simulation]
+            CLUMP_SCALE,    ///< clumpiness control [ shape control]
+            CLUMP_ROUNDNESS,///< clumping noise [ shape control]
+            WAVE_SCALE,     ///< waviness scale [ shape control ]
+            WAVE_FREQ,      ///< waviness frequency [ shape control ]
+            STRAND,         ///< texture along hair strand [ shading ]
+            LENGTH,         ///< length control [shape control] 
+            SPECULAR,       ///< specularity control [shading ] 
+            WEIGHTS,        ///< weight texture for multiple material blending [control for all other textures]
+            COUNT_OF
         };
 
         [System.Serializable]

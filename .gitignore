@@ -18,6 +18,8 @@
 
 GFSDK_HairWorks.win64.dll*
 GFSDK_HairWorks.win32.dll*
+NvHairWorksDx11.win64.dll*
+NvHairWorksDx11.win32.dll*
 GFSDK_HairWorks.h*
 GFSDK_HairWorks_Common.h*
 GFSDK_HairWorks_ShaderCommon.h*
@@ -31,6 +33,7 @@ Library/
 Temp/
 Build/
 Builds/
+include/
 Hidden/
 Hidden.meta
 obj/

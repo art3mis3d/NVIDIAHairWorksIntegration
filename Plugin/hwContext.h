@@ -79,7 +79,7 @@ struct hwConstantBuffer
 	
     int num_lights; int pad0[3];
     hwLightData lights[hwMaxLights];
-    GFSDK_HairShaderConstantBuffer hw;
+	NvHair::ShaderConstantBuffer hw;
 
     hwConstantBuffer() : num_lights(0) {}
 };
@@ -183,6 +183,12 @@ private:
 
     ID3D11Device            *m_d3ddev = nullptr;
     ID3D11DeviceContext     *m_d3dctx = nullptr;
+
+	const NvHair::TextureType::Enum textureTypes[4] = { NvHair::TextureType::ROOT_COLOR , NvHair::TextureType::TIP_COLOR, NvHair::TextureType::SPECULAR, NvHair::TextureType::STRAND };
+
+	nvidia::Common::ApiDevice m_dev_handle;
+	nvidia::Common::ApiContext m_ctx_handle;
+
     ShaderCont              m_shaders;
     AssetCont               m_assets;
     InstanceCont            m_instances;
@@ -191,8 +197,8 @@ private:
     DeferredCalls           m_commands;
     DeferredCalls           m_commands_back;
 
-    ID3D11DepthStencilState *m_rs_enable_depth;
-    ID3D11Buffer            *m_rs_constant_buffer;
+    ID3D11DepthStencilState *m_rs_enable_depth = nullptr;
+    ID3D11Buffer            *m_rs_constant_buffer = nullptr;
 
     hwConstantBuffer        m_cb;
 

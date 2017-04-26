@@ -146,7 +146,7 @@ extern "C" {
 
 hwExport int hwGetSDKVersion()
 {
-    return GFSDK_HAIRWORKS_VERSION;
+    return NV_HAIR_VERSION;
 }
 
 hwExport bool hwLoadHairWorks()
@@ -226,10 +226,10 @@ hwExport hwHAsset hwAssetLoadFromFile(const char *path, float unit)
     if (auto ctx = hwGetContext()) {
 		hwConversionSettings settings;
 		ZeroMemory(&settings, sizeof(settings));
-		settings.m_targetUpAxisHint = GFSDK_HAIR_Y_UP;
+		settings.m_targetUpAxisHint = NvHair::AxisHint::Y_UP;
 		// Allow user to specify scale
 		settings.m_targetSceneUnit = unit;
-		settings.m_targetHandednessHint = GFSDK_HAIR_RIGHT_HANDED;
+		settings.m_targetHandednessHint = NvHair::HandednessHint::RIGHT;
         return ctx->assetLoadFromFile(path, &settings);
     }
     return hwNullHandle;

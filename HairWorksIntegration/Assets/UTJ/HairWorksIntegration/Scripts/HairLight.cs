@@ -218,7 +218,7 @@ namespace UTJ
 
             Shader.EnableKeyword("SHADOWS_SPLIT_SPHERES");
 
-           
+            Debug.Log(hwi.hwGetSDKVersion());
         }
 
         void Start()
