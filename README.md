@@ -8,20 +8,20 @@ A Unity integration of NVIDIA HairWorks. You can display Hair authored in MAYA o
 **Requires Unity 5.5 or later, Windows DX11 only**  
 Installation is somewhat complicated. 
 As the Hairworks SDK is not allowed to be redistributed, you must obtain it from NVIDIA's developer website and import it into the Unity project. 
-The 3-step procedure is explained below. The current integration is based on HairWorks SDK version 1.1.1.
+The 3-step procedure is explained below. The current integration is based on HairWorks SDK version 1.2.1.
 
-1.  Get the HairWorks SDK 1.1.1
-  * https://developer.nvidia.com/gameworksdownload NVIDIA HairWorks -> HairWorks 1.1.1 here
+1.  Get the HairWorks SDK 1.2.1
+  * https://developer.nvidia.com/gameworksdownload NVIDIA HairWorks -> HairWorks 1.2.1 here
   * A NVIDIA developer account is required to download the SDK. Creating an account is free. The amount of time before you can access gameworks features may vary.
   * MAYA and 3ds Max authoring plugins can also be obtained from here
   
 2. Import the following DLL's in the HairWorks SDK you downloaded into the Unity project.
-  * Copy HairWorks-r1_1_1-62 / HairWorks / bin / win64 / GFSDK_HairWorks.win64.dll into Assets / UTJ / Plugins / x86_64 (Only required if you target 64 bit)
-  * Copy HairWorks-r1_1_1-62 / HairWorks / bin / win32 / GFSDK_HairWorks.win32.dll into Assets / UTJ / Plugins / x86 (Only required if you target 32 bit)
+  * Copy HairWorks-r1-1-212-distro / HairWorks / bin / win64 / NvHairWorksDx11.win64.dll into Assets / UTJ / Plugins / x86_64 (Only required if you target 64 bit)
+  * Copy HairWorks-r1-1-212-distro / HairWorks / bin / win32 / NvHairWorksDx11.win64.dll into Assets / UTJ / Plugins / x86 (Only required if you target 32 bit)
 
 ### Build Instructions
 The hair shader used by the integration is not a normal Unity shader, if you want to customize the shader then you need to write an HLSL shader yourself or modify the existing one in the Visual Studio project. 
-If you want to build the shader and the plug-in, Copy the HairWorks-r1_1_1-62/HairWorks/include folder into the Plugin folder.
+If you want to build the shader and the plug-in, Copy the HairWorks-r1-1-212-distro/HairWorks/include folder into the Plugin folder.
 Open the Visual Studio project in the Plugin folder, go to project settings, under C/C++ find the additional include directories field and add the include folder that you copied, then build the Visual Studio project.
 DO NOT build the Visual Studio project while the Unity project is open, this will cause the Editor to crash.  
 Incidentally, the screenshots shown here are from the samples included in the SDK and can be found in media/Mite.
