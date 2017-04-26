@@ -328,27 +328,41 @@ namespace UTJ
 
         void UpdateLightProbes()
         {
-            if (LightmapSettings.lightProbes.count > 0 && useLightProbes)
+            if (LightmapSettings.lightProbes != null)
             {
-                SphericalHarmonicsL2 aSample;    // SH sample consists of 27 floats   
-                LightProbes.GetInterpolatedProbe(this.transform.position, this.GetComponent<MeshRenderer>(), out aSample);
 
-                for (int iC = 0; iC < 3; iC++)
+                if (LightmapSettings.lightProbes.count > 0 && useLightProbes)
                 {
-                    avCoeff[iC] = new Vector4((float)aSample[iC, 3], aSample[iC, 1], aSample[iC, 2], aSample[iC, 0] - aSample[iC, 6]);
-                }
-                for (int iC = 0; iC < 3; iC++)
-                {
-                    avCoeff[iC + 3].x = aSample[iC, 4];
-                    avCoeff[iC + 3].y = aSample[iC, 5];
-                    avCoeff[iC + 3].z = 3.0f * aSample[iC, 6];
-                    avCoeff[iC + 3].w = aSample[iC, 7];
-                }
-                avCoeff[6].x = aSample[0, 8];
-                avCoeff[6].y = aSample[1, 8];
-                avCoeff[6].y = aSample[2, 8];
-                avCoeff[6].w = 1.0f;
+                    SphericalHarmonicsL2 aSample;    // SH sample consists of 27 floats   
+                    LightProbes.GetInterpolatedProbe(this.transform.position, this.GetComponent<MeshRenderer>(), out aSample);
 
+                    for (int iC = 0; iC < 3; iC++)
+                    {
+                        avCoeff[iC] = new Vector4((float)aSample[iC, 3], aSample[iC, 1], aSample[iC, 2], aSample[iC, 0] - aSample[iC, 6]);
+                    }
+                    for (int iC = 0; iC < 3; iC++)
+                    {
+                        avCoeff[iC + 3].x = aSample[iC, 4];
+                        avCoeff[iC + 3].y = aSample[iC, 5];
+                        avCoeff[iC + 3].z = 3.0f * aSample[iC, 6];
+                        avCoeff[iC + 3].w = aSample[iC, 7];
+                    }
+                    avCoeff[6].x = aSample[0, 8];
+                    avCoeff[6].y = aSample[1, 8];
+                    avCoeff[6].y = aSample[2, 8];
+                    avCoeff[6].w = 1.0f;
+
+                }
+                else
+                {
+                    avCoeff[0] = Vector4.zero;
+                    avCoeff[1] = Vector4.zero;
+                    avCoeff[2] = Vector4.zero;
+                    avCoeff[3] = Vector4.zero;
+                    avCoeff[4] = Vector4.zero;
+                    avCoeff[5] = Vector4.zero;
+                    avCoeff[6] = Vector4.zero;
+                }
             }
             else
             {
