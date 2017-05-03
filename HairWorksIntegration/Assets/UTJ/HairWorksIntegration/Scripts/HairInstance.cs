@@ -34,7 +34,7 @@ namespace UTJ
         }
         #endregion
 
-        static CameraEvent s_timing = CameraEvent.BeforeImageEffects;
+        static CameraEvent s_timing = CameraEvent.AfterForwardOpaque;
 
         public string m_hair_asset;
         public string m_hair_shader = "UTJ/HairWorksIntegration/DefaultHairShader.cso";

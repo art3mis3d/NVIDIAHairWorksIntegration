@@ -186,7 +186,7 @@ float4 ps_main(NvHair_PixelShaderInput input) : SV_Target
     }
 
 	// sample hair color
-    float3 hairColor = NvHair_SampleHairColorStrandTex(g_hairConstantBuffer, mat, texSampler, g_rootHairColorTexture, g_strandTexture, g_tipHairColorTexture, attr.texcoords).rgb;
+    float3 hairColor = NvHair_SampleHairColorStrandTex(g_hairConstantBuffer, mat, texSampler, g_rootHairColorTexture, g_tipHairColorTexture, g_strandTexture, attr.texcoords).rgb;
 
 	// convert worldspace coordinates to shadowmap uv coordinates
 	float4 cascadeWeights =  getCascadeWeights_splitSpheres(attr.P.xyz);

@@ -9,6 +9,7 @@ public class DepthDebug : MonoBehaviour {
 	// Use this for initialization
 	void Start ()
     {
+        Camera.main.depthTextureMode = DepthTextureMode.Depth;
         mat = new Material(shader);	
 	}
 	
