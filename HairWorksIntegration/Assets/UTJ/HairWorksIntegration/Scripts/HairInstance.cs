@@ -8,7 +8,6 @@ using UnityEditor;
 using UnityEditor.Rendering;
 #endif
 
-
 namespace UTJ
 {
     [AddComponentMenu("UTJ/Hair Works Integration/Hair Instance")]
@@ -18,11 +17,6 @@ namespace UTJ
     {
         #region static
         static List<HairInstance> s_instances;
-        static int s_nth_LateUpdate;
-        static int s_nth_OnWillRenderObject;
-
-        static CommandBuffer s_command_buffer;
-        static HashSet<Camera> s_cameras = new HashSet<Camera>();
 
         static public List<HairInstance> GetInstances()
         {
@@ -32,9 +26,8 @@ namespace UTJ
             }
             return s_instances;
         }
-        #endregion
 
-        static CameraEvent s_timing = CameraEvent.BeforeImageEffects;
+        #endregion
 
         public string m_hair_asset;
         public string m_hair_shader = "UTJ/HairWorksIntegration/DefaultHairShader.cso";
@@ -117,12 +110,12 @@ namespace UTJ
 
         void RepaintWindow()
         {
-#if UNITY_EDITOR
+            #if UNITY_EDITOR
             var assembly = typeof(UnityEditor.EditorWindow).Assembly;
             var type = assembly.GetType("UnityEditor.GameView");
             var gameview = EditorWindow.GetWindow(type);
             gameview.Repaint();
-#endif
+            #endif
         }
 
         public void LoadHairShader(string path_to_cso)
@@ -139,9 +132,9 @@ namespace UTJ
             {
                 m_hair_shader = path_to_cso;
             }
-#if UNITY_EDITOR
+            #if UNITY_EDITOR
             RepaintWindow();
-#endif
+            #endif
         }
 
         public void ReloadHairShader()
@@ -190,7 +183,6 @@ namespace UTJ
 #endif
         }
 
-
         public void ReloadHairAsset()
         {
             hwi.hwAssetReload(m_hasset);
@@ -220,6 +212,11 @@ namespace UTJ
             {
                     AssignTexture(types[i], textureDictionary[types[i]]);
             }
+
+
+            #if UNITY_EDITOR
+                        RepaintWindow();
+            #endif
         }
 
         public void UpdateBones()
@@ -264,8 +261,6 @@ namespace UTJ
                 {
                     m_conversion_matrix *= Matrix4x4.Scale(new Vector3(-1.0f, 1.0f, 1.0f));
                 }
-
-                
 
                 // m_conversion_matrix is constant, optimize by premultiplying with m_inv_bindpose
                 for (int i = 0; i < num_bones; ++i)
@@ -548,7 +543,7 @@ namespace UTJ
         }
 
 
-#if UNITY_EDITOR
+
         void Reset()
         {
             var skinned_mesh_renderer = GetComponent<SkinnedMeshRenderer>();
@@ -568,26 +563,7 @@ namespace UTJ
                 renderer.sharedMaterials = new Material[0] { };
             }
         }
-#endif
 
-        void OnApplicationQuit()
-        {
-            ClearCommandBuffer();
-        }
-
-        void Awake()
-        {
-#if UNITY_EDITOR
-            if(!hwi.hwLoadHairWorks())
-            {
-                EditorUtility.DisplayDialog(
-                    "Hair Works Integration",
-                    "Failed to load HairWorks (version " + hwi.hwGetSDKVersion() + ") dll. You need to get HairWorks SDK from NVIDIA website. Read document for more detail.",
-                    "OK");
-            }
-#endif
-            hwi.hwSetLogCallback();
-        }
 
         void OnDestroy()
         {
@@ -597,7 +573,9 @@ namespace UTJ
 
         void OnEnable()
         {
-            GetInstances().Add(this);
+			Reset();
+
+			GetInstances().Add(this);
             m_params.m_enable = true;
             reflectionProbes = FindObjectsOfType<ReflectionProbe>();
             probeInstances = new List<ReflectionProbe>(reflectionProbes.Length);
@@ -614,11 +592,6 @@ namespace UTJ
         {
             LoadHairShader(m_hair_shader);
             LoadHairAsset(m_hair_asset, false);
-
-            // Change depth stencil to match reversed z-buffer in 5.5
-#if UNITY_5_5_OR_NEWER
-            hwi.hwInitializeDepthStencil(true);
-#endif
             AssignAllTextures();
         }
 
@@ -647,20 +620,12 @@ namespace UTJ
                 var size = bmax - center;
                 m_probe_mesh.bounds = new Bounds(center, size);
             }
-
-            s_nth_LateUpdate = 0;
-        }
-
-       void LateUpdate()
-        {
-            if (s_nth_LateUpdate++ == 0)
-            {
-                hwi.hwStepSimulation(Time.deltaTime);
-            }
         }
 
        void OnWillRenderObject()
         {
+            if (!m_hasset) { return; }
+
             if (updateBones)
             {
                 UpdateBones();
@@ -673,96 +638,18 @@ namespace UTJ
              hwi.hwInstanceUpdateSkinningMatrices(m_hinstance, m_skinning_matrices.Length, m_skinning_matrices_ptr);
 
             GetReflectionProbeData();
+
             UpdateLightProbes();
+
             hwi.hwSetSphericalHarmonics(ref avCoeff[0], ref avCoeff[1], ref avCoeff[2], ref avCoeff[3], ref avCoeff[4], ref avCoeff[5], ref avCoeff[6]);
 
             Vector4 giparams = new Vector4(lightProbeIntensity, reflectionProbeIntensity, reflectionProbeSpecularity, probeBlendAmount);
             hwi.hwSetGIParameters(ref giparams);
 
-            if (s_nth_OnWillRenderObject++ == 0)
-            {
-                BeginRender();
-                
-                for (int i = 0; i < GetInstances().Count; i++)
-                {
-                    GetInstances()[i].Render();
-                }
-                EndRender();
-            }
+			HairWorksManager.Render(Camera.current, this);
         }
 
-        void OnRenderObject()
-        {
-            s_nth_OnWillRenderObject = 0;
-        }
-
-        static public bool IsDeferred(Camera cam)
-        {
-            if (cam.renderingPath == RenderingPath.DeferredShading
-#if UNITY_EDITOR
-#if !UNITY_5_5_OR_NEWER
-            || (cam.renderingPath == RenderingPath.UsePlayerSettings && PlayerSettings.renderingPath == RenderingPath.DeferredShading)
-#else
-            || (cam.renderingPath == RenderingPath.UsePlayerSettings && EditorGraphicsSettings.GetTierSettings(BuildTargetGroup.Standalone, GraphicsTier.Tier3).renderingPath == RenderingPath.DeferredShading)
-#endif
-
-#endif
-            )
-            {
-                return true;
-            }
-            return false;
-        }
-
-        static public bool DoesRenderToTexture(Camera cam)
-        {
-            return IsDeferred(cam) || cam.targetTexture != null;
-        }
-
-
-        static public void ClearCommandBuffer()
-        {
-            foreach (var c in s_cameras)
-            {
-                if (c != null)
-                {
-                    c.RemoveCommandBuffer(s_timing, s_command_buffer);
-                }
-            }
-            s_cameras.Clear();
-        }
-
-        static void BeginRender()
-        {
-            if (s_command_buffer == null)
-            {
-                s_command_buffer = new CommandBuffer();
-                s_command_buffer.name = "Hair";
-                s_command_buffer.IssuePluginEvent(hwi.hwGetRenderEventFunc(), 0);
-            }
-
-            Camera cam = Camera.current;
-
-            if (cam != null)
-            {
-                Matrix4x4 V = cam.worldToCameraMatrix;
-                //DoesRenderToTexture does not account for image effects or msaa. Force true for now. False only useful in forward without image effects or msaa, unlikely use case.
-                Matrix4x4 P = GL.GetGPUProjectionMatrix(cam.projectionMatrix, /*DoesRenderToTexture(cam)*/ true);
-                float fov = cam.fieldOfView;
-                hwi.hwSetViewProjection(ref V, ref P, fov);
-                HairLight.AssignLightData();
-
-                if (!s_cameras.Contains(cam))
-                {
-                    cam.AddCommandBuffer(s_timing, s_command_buffer);
-                    s_cameras.Add(cam);
-                }
-            }
-
-            hwi.hwBeginScene();
-        }
-
-        void Render()
+        public void Render()
         {
             if (!m_hasset) { return; }
 
@@ -770,11 +657,5 @@ namespace UTJ
             hwi.hwRender(m_hinstance);
         }
 
-        static void EndRender()
-        {
-            hwi.hwEndScene();
-        }
-
     }
-
 }
