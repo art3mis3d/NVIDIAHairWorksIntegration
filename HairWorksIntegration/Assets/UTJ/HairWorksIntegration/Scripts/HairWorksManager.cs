@@ -14,18 +14,26 @@ public class HairWorksManager : MonoBehaviour
     static CommandBuffer s_command_buffer;
     static HashSet<Camera> s_cameras = new HashSet<Camera>();
 
-    void Awake()
-    {
-        #if UNITY_EDITOR
+	public static bool HairWorksEnabled = true;
+
+    void OnEnable()
+    {  
         if (!hwi.hwLoadHairWorks())
         {
-            EditorUtility.DisplayDialog(
+			#if UNITY_EDITOR
+			EditorUtility.DisplayDialog(
                 "Hair Works Integration",
                 "Failed to load HairWorks (version " + hwi.hwGetSDKVersion() + ") dll. You need to get HairWorks SDK from NVIDIA website. Read document for more detail.",
                 "OK");
-        }
-        #endif
-        hwi.hwSetLogCallback();
+			#endif
+
+			HairWorksEnabled = false;
+			return;
+		}
+
+		HairWorksEnabled = true;
+
+		hwi.hwSetLogCallback();
     }
 
 	// Use this for initialization
@@ -41,6 +49,11 @@ public class HairWorksManager : MonoBehaviour
     {
         hwi.hwStepSimulation(Time.deltaTime);
     }
+
+	void OnDisable()
+	{
+		HairWorksEnabled = false;
+	}
 
     void OnApplicationQuit()
     {
@@ -91,6 +104,9 @@ public class HairWorksManager : MonoBehaviour
             s_command_buffer.name = "Hair";
             s_command_buffer.IssuePluginEvent(hwi.hwGetRenderEventFunc(), 0);
         }
+
+		if (!HairWorksEnabled)
+			return;
 
 		CameraEvent s_timing;
 

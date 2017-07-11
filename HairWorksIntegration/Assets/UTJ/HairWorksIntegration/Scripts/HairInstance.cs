@@ -542,8 +542,6 @@ namespace UTJ
             }
         }
 
-
-
         void Reset()
         {
             var skinned_mesh_renderer = GetComponent<SkinnedMeshRenderer>();
