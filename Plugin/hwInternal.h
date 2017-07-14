@@ -1,7 +1,7 @@
 #pragma once
 #define hwImpl
 
-using namespace DirectX; // for DirectX Math
+//using namespace DirectX; // for DirectX Math
 
 #ifdef _WIN32
     #define hwWindows

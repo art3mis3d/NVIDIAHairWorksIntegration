@@ -1,7 +1,4 @@
-﻿#define WINVER						0x0600 
-#define _WIN32_WINNT                0x0600
-
-#include <algorithm>
+﻿#include <algorithm>
 #include <map>
 #include <vector>
 #include <memory>
@@ -13,7 +10,7 @@
 #include <mutex>
 
 #include <d3d11.h>
-#include <directXMath.h>
+//#include <directXMath.h>
 
 #ifndef NDEBUG
 #define NDEBUG

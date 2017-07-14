@@ -184,7 +184,7 @@ private:
     ID3D11Device            *m_d3ddev = nullptr;
     ID3D11DeviceContext     *m_d3dctx = nullptr;
 
-	const NvHair::TextureType::Enum textureTypes[4] = { NvHair::TextureType::ROOT_COLOR , NvHair::TextureType::TIP_COLOR, NvHair::TextureType::SPECULAR, NvHair::TextureType::STRAND };
+	//const NvHair::TextureType::Enum textureTypes[4] = { NvHair::TextureType::ROOT_COLOR , NvHair::TextureType::TIP_COLOR, NvHair::TextureType::SPECULAR, NvHair::TextureType::STRAND };
 
 	nvidia::Common::ApiDevice m_dev_handle;
 	nvidia::Common::ApiContext m_ctx_handle;

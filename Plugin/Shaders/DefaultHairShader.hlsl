@@ -271,7 +271,7 @@ float4 ps_main(NvHair_PixelShaderInput input) : SV_Target
 	r.rgb += (hairColor * ShadeSH9(shAr, shAg, shAb, shBr, shBg, shBb, shC, float4(attr.N, 1)) * gi_params.x);
 
 	// calc mip level to use
-	float mip = GetSpecPowToMip(mat.specularColor * gi_params.z);
+	float mip = GetSpecPowToMip(mat.specularColor.rgb * gi_params.z);
 
 	// sample reflection probes
 	float3 probe1 = g_reflectionProbe1.SampleLevel(texSampler, attr.N, mip).rgb;

@@ -954,6 +954,8 @@ void hwContext::renderImpl(hwHInstance hi)
 
 		ID3D11ShaderResourceView* ppTextureSRVs[4] = { nullptr, nullptr, nullptr, nullptr };
 
+		NvHair::TextureType::Enum textureTypes[4] = { NvHair::TextureType::ROOT_COLOR , NvHair::TextureType::TIP_COLOR, NvHair::TextureType::SPECULAR, NvHair::TextureType::STRAND };
+
 		if (NV_SUCCEEDED(g_hw_sdk->getTextures(v.iid, textureTypes, 4, NvCo::Dx11Type::wrapPtr(ppTextureSRVs))))
 		{
 			m_d3dctx->PSSetShaderResources(NvHair::ShaderResourceType::COUNT_OF, 4, ppTextureSRVs);
