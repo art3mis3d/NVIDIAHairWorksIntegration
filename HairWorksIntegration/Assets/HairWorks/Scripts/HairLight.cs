@@ -97,6 +97,7 @@ namespace GameWorks
         IntPtr shadowParamsPointer = IntPtr.Zero;
 
         RenderTexture dummyTex;
+        Light m_Light;
 
         public CommandBuffer GetCommandBuffer()
         {
@@ -113,7 +114,7 @@ namespace GameWorks
 
                 m_cb.Blit(shadowmap, new RenderTargetIdentifier(m_ShadowmapCopy));
 
-                GetComponent<Light>().AddCommandBuffer(LightEvent.AfterShadowMap, m_cb);
+                m_Light.AddCommandBuffer(LightEvent.AfterShadowMap, m_cb);
             }
             return m_cb;
         }
@@ -221,6 +222,8 @@ namespace GameWorks
 
         void Start()
         {
+            m_Light = GetComponent<Light>();
+
             dummyTex = RenderTexture.GetTemporary(Screen.width, Screen.height, 0, RenderTextureFormat.Default, RenderTextureReadWrite.Default);
         }
 

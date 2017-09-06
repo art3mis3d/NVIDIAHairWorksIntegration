@@ -11,7 +11,8 @@ using GameWorks;
 [ExecuteInEditMode]
 public class HairWorksManager : MonoBehaviour
 {
-    static CommandBuffer s_command_buffer;
+    static CommandBuffer    CmdBuffer_HairRender;
+ 
     static HashSet<Camera> s_cameras = new HashSet<Camera>();
 
 	public static bool HairWorksEnabled = true;
@@ -97,14 +98,13 @@ public class HairWorksManager : MonoBehaviour
             #endif
     }
 
-    public static void Render(Camera CameraToAdd, HairInstance instance)
+    public static void Render( Camera CameraToAdd, HairInstance instance )
     {
-        if (s_command_buffer == null)
+        if (CmdBuffer_HairRender == null)
         {
-            s_command_buffer      = new CommandBuffer();
-            s_command_buffer.name = "Hair";
-            s_command_buffer.IssuePluginEvent( hwi.hwGetRenderEventFunc(), 0);
-     
+            CmdBuffer_HairRender      = new CommandBuffer();
+            CmdBuffer_HairRender.name = "Hair";
+            CmdBuffer_HairRender.IssuePluginEvent( hwi.hwGetRenderEventFunc(), 0); 
         }
 
 		if (!HairWorksEnabled)
@@ -131,7 +131,7 @@ public class HairWorksManager : MonoBehaviour
 
             if (!s_cameras.Contains(CameraToAdd))
             {
-				CameraToAdd.AddCommandBuffer(s_timing, s_command_buffer);
+				CameraToAdd.AddCommandBuffer(s_timing, CmdBuffer_HairRender);
                 s_cameras.Add(CameraToAdd);
             }
         }
@@ -151,11 +151,11 @@ public class HairWorksManager : MonoBehaviour
             {
 				if (IsDeferred(c))
 				{
-					c.RemoveCommandBuffer(CameraEvent.BeforeImageEffects, s_command_buffer);
+					c.RemoveCommandBuffer(CameraEvent.BeforeImageEffects, CmdBuffer_HairRender);
 				}
 				else
 				{
-					c.RemoveCommandBuffer(CameraEvent.AfterImageEffectsOpaque, s_command_buffer);
+					c.RemoveCommandBuffer(CameraEvent.AfterImageEffectsOpaque, CmdBuffer_HairRender);
 				}
 			}
         }

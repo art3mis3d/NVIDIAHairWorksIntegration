@@ -8,7 +8,7 @@ using UnityEditor;
 
 namespace GameWorks
 {
-    [AddComponentMenu("UTJ/Misc/FixDeltaTime")]
+    [AddComponentMenu("Hair Works/Misc/FixDeltaTime")]
     public class FixDeltaTime : MonoBehaviour
     {
         public float m_targetFrameRate = 30.0f;
