@@ -42,7 +42,9 @@ public class HairWorksManager : MonoBehaviour
         // Change depth stencil to match reversed z-buffer in 5.5
         #if UNITY_5_5_OR_NEWER
         hwi.hwInitializeDepthStencil(true);
-		#endif
+#endif
+
+        Application.targetFrameRate = 30;
     }
 
     void LateUpdate()
@@ -100,9 +102,10 @@ public class HairWorksManager : MonoBehaviour
     {
         if (s_command_buffer == null)
         {
-            s_command_buffer = new CommandBuffer();
+            s_command_buffer      = new CommandBuffer();
             s_command_buffer.name = "Hair";
-            s_command_buffer.IssuePluginEvent(hwi.hwGetRenderEventFunc(), 0);
+            s_command_buffer.IssuePluginEvent( hwi.hwGetRenderEventFunc(), 0);
+     
         }
 
 		if (!HairWorksEnabled)
@@ -119,11 +122,11 @@ public class HairWorksManager : MonoBehaviour
 			s_timing = CameraEvent.AfterImageEffectsOpaque;
 		}
 
-		if (CameraToAdd != null)
+		if ( CameraToAdd != null )
         {
             Matrix4x4 V = CameraToAdd.worldToCameraMatrix;
             Matrix4x4 P = GL.GetGPUProjectionMatrix(CameraToAdd.projectionMatrix, DoesRenderToTexture(CameraToAdd));
-            float fov = CameraToAdd.fieldOfView;
+            float fov   = CameraToAdd.fieldOfView;
             hwi.hwSetViewProjection(ref V, ref P, fov);
             HairLight.AssignLightData();
 

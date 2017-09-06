@@ -430,7 +430,7 @@ namespace UTJ
             {
                 up_axis = UpAxis.YUp;
                 handedness = Handedness.RightHanded;
-                unit = 0.0f;
+                unit = 100.0f;
             }
         }
 

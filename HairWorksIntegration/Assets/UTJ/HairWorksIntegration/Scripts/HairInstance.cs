@@ -34,7 +34,7 @@ namespace UTJ
         public Transform m_root_bone;
         public bool m_invert_bone_x = true;
         public Mesh m_probe_mesh;
-        public float scaleFactor = 1f;
+        public float unit  = 100;
         public hwi.Descriptor m_params = hwi.Descriptor.default_value;
         hwi.HShader m_hshader = hwi.HShader.NullHandle;
         hwi.HAsset m_hasset = hwi.HAsset.NullHandle;
@@ -158,7 +158,7 @@ namespace UTJ
             }
 
             // load & create instance
-            if (m_hasset = hwi.hwAssetLoadFromFile(Application.streamingAssetsPath + "/" + path_to_apx, scaleFactor * 100f))
+            if (m_hasset = hwi.hwAssetLoadFromFile(Application.streamingAssetsPath + "/" + path_to_apx, unit))
             {
                 m_hair_asset = path_to_apx;
                 m_hinstance = hwi.hwInstanceCreate(m_hasset);
