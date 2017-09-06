@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using UnityEditor;
 
-namespace UTJ
+namespace GameWorks
 {
     static class MiscDebugMenu
     {

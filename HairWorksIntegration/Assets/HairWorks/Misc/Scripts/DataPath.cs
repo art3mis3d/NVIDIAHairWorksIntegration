@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 
 
-namespace UTJ
+namespace GameWorks
 {
     [Serializable]
     public class DataPath

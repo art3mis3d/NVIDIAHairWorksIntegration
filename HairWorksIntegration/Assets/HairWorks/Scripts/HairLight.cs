@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace UTJ
+namespace GameWorks
 {
 
     [AddComponentMenu("Hair Works/Hair Light")]

@@ -8,7 +8,7 @@ using UnityEditor;
 using UnityEditor.Rendering;
 #endif
 
-namespace UTJ
+namespace GameWorks
 {
     [AddComponentMenu("Hair Works/Hair Instance")]
     [ExecuteInEditMode]

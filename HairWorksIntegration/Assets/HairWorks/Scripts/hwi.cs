@@ -8,7 +8,7 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-namespace UTJ
+namespace GameWorks
 {
 
     public static class hwi

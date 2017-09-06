@@ -6,7 +6,7 @@ using UnityEditor.Rendering;
 #endif
 using UnityEngine;
 using UnityEngine.Rendering;
-using UTJ;
+using GameWorks;
 
 [ExecuteInEditMode]
 public class HairWorksManager : MonoBehaviour

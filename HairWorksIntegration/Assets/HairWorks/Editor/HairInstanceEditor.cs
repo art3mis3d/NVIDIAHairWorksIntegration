@@ -2,7 +2,7 @@ using System;
 using UnityEditor;
 using UnityEngine;
 
-namespace UTJ
+namespace GameWorks
 {
     [CustomEditor(typeof(HairInstance))]
     public class HairInstanceEditor : Editor
