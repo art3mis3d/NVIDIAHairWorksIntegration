@@ -16,8 +16,8 @@ The 3-step procedure is explained below. The current integration is based on Hai
   * MAYA and 3ds Max authoring plugins can also be obtained from here
   
 2. Import the following DLL's in the HairWorks SDK you downloaded into the Unity project.
-  * Copy HairWorks-r1-1-212-distro / HairWorks / bin / win64 / NvHairWorksDx11.win64.dll into Assets / UTJ / Plugins / x86_64 (Only required if you target 64 bit)
-  * Copy HairWorks-r1-1-212-distro / HairWorks / bin / win32 / NvHairWorksDx11.win64.dll into Assets / UTJ / Plugins / x86 (Only required if you target 32 bit)
+  * Copy HairWorks-r1-1-212-distro / HairWorks / bin / win64 / NvHairWorksDx11.win64.dll into Assets / HairWorks / Plugins / x86_64 (Only required if you target 64 bit)
+  * Copy HairWorks-r1-1-212-distro / HairWorks / bin / win32 / NvHairWorksDx11.win64.dll into Assets / HairWorks / Plugins / x86 (Only required if you target 32 bit)
 
 ### Build Instructions
 The hair shader used by the integration is not a normal Unity shader, if you want to customize the shader then you need to write an HLSL shader yourself or modify the existing one in the Visual Studio project. 
