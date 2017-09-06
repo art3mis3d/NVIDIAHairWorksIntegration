@@ -219,10 +219,14 @@ namespace GameWorks
 
             Shader.EnableKeyword("SHADOWS_SPLIT_SPHERES");
         }
+        private void Awake()
+        {
+            m_Light = GetComponent<Light>();
+        }
 
         void Start()
         {
-            m_Light = GetComponent<Light>();
+           
 
             dummyTex = RenderTexture.GetTemporary(Screen.width, Screen.height, 0, RenderTextureFormat.Default, RenderTextureReadWrite.Default);
         }
