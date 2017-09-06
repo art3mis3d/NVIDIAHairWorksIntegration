@@ -40,11 +40,10 @@ public class HairWorksManager : MonoBehaviour
 	void Start ()
     {
         // Change depth stencil to match reversed z-buffer in 5.5
-        #if UNITY_5_5_OR_NEWER
+ #if UNITY_5_5_OR_NEWER
         hwi.hwInitializeDepthStencil(true);
-#endif
-
-        Application.targetFrameRate = 30;
+#endif 
+       Application.targetFrameRate = 30;
     }
 
     void LateUpdate()
