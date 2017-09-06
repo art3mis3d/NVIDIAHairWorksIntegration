@@ -133,8 +133,9 @@ $(SolutionDir)Externals\PatchLibrary\PatchLibraryProxy64.exe /target:Unity.exe /
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Master|x64'">
     <PostBuildEvent>
-      <Command>xcopy /Yq $(TargetDir)*.cso $(SolutionDir)..\HairWorksIntegration\Assets\StreamingAssets\UTJ\HairWorksIntegration\
-xcopy /Yq $(TargetPath) $(SolutionDir)..\HairWorksIntegration\Assets\UTJ\Plugins\x86_64\
+      <Command>xcopy /Yq $(TargetDir)*.cso $(SolutionDir)..\HairWorksIntegration\Assets\StreamingAssets\HairWorks\
+xcopy /Yq $(TargetPath) $(SolutionDir)..\HairWorksIntegration\Assets\HairWorks\Plugins\x86_64\
+
 $(SolutionDir)Externals\PatchLibrary\PatchLibraryProxy64.exe /target:Unity.exe /patch:$(TargetPath)</Command>
     </PostBuildEvent>
     <ClCompile>
@@ -196,8 +197,8 @@ $(SolutionDir)Externals\PatchLibrary\PatchLibraryProxy64.exe /target:Unity.exe /
       <ModuleDefinitionFile>exports_x86.def</ModuleDefinitionFile>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /Yq $(TargetDir)*.cso $(SolutionDir)..\HairWorksIntegration\Assets\StreamingAssets\UTJ\HairWorksIntegration\
-xcopy /Yq $(TargetPath) $(SolutionDir)..\HairWorksIntegration\Assets\UTJ\Plugins\x86\
+      <Command>xcopy /Yq $(TargetDir)*.cso $(SolutionDir)..\HairWorksIntegration\Assets\StreamingAssets\HairWorks\
+xcopy /Yq $(TargetPath) $(SolutionDir)..\HairWorksIntegration\Assets\HairWorks\Plugins\x86\
 $(SolutionDir)Externals\PatchLibrary\PatchLibraryProxy32.exe /target:Unity.exe /patch:$(TargetPath)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
