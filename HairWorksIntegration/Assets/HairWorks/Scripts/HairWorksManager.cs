@@ -110,19 +110,19 @@ public class HairWorksManager : MonoBehaviour
 		if (!HairWorksEnabled)
 			return;
 
-		CameraEvent s_timing;
-
-		if (IsDeferred(CameraToAdd))
-		{
-			s_timing = CameraEvent.BeforeImageEffects;
-		}
-		else
-		{
-			s_timing = CameraEvent.AfterImageEffectsOpaque;
-		}
-
 		if ( CameraToAdd != null )
         {
+            CameraEvent s_timing;
+
+            if (IsDeferred(CameraToAdd))
+            {
+                s_timing = CameraEvent.BeforeImageEffects;
+            }
+            else
+            {
+                s_timing = CameraEvent.AfterImageEffectsOpaque;
+            }
+
             Matrix4x4 V = CameraToAdd.worldToCameraMatrix;
             Matrix4x4 P = GL.GetGPUProjectionMatrix(CameraToAdd.projectionMatrix, DoesRenderToTexture(CameraToAdd));
             float fov   = CameraToAdd.fieldOfView;
