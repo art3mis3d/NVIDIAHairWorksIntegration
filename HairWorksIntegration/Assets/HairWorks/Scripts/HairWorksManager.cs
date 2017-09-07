@@ -130,8 +130,8 @@ public class HairWorksManager : MonoBehaviour
             HairLight.AssignLightData();
 
             if (!s_cameras.Contains(CameraToAdd))
-            {
-				CameraToAdd.AddCommandBuffer(s_timing, CmdBuffer_HairRender);
+            { 
+                CameraToAdd.AddCommandBuffer(s_timing, CmdBuffer_HairRender);
                 s_cameras.Add(CameraToAdd);
             }
         }

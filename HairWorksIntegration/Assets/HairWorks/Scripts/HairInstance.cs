@@ -547,19 +547,20 @@ namespace GameWorks
             var skinned_mesh_renderer = GetComponent<SkinnedMeshRenderer>();
             m_root_bone = skinned_mesh_renderer != null ? skinned_mesh_renderer.rootBone : GetComponent<Transform>();
 
-            var renderer = GetComponent<Renderer>();
-            if (renderer == null)
-            {
-                m_probe_mesh = new Mesh();
-                m_probe_mesh.name = "Probe";
-                m_probe_mesh.vertices = new Vector3[1] { Vector3.zero };
-                m_probe_mesh.SetIndices(new int[1] { 0 }, MeshTopology.Points, 0);
+            //var renderer = GetComponent<Renderer>();
+            //if (renderer == null)
+            //{
+            //    m_probe_mesh = new Mesh();
+            //    m_probe_mesh.name = "Probe";
+            //    m_probe_mesh.vertices = new Vector3[1] {  Vector3.zero };
+            //    m_probe_mesh.SetIndices(new int[1] { 0 }, MeshTopology.Points, 0);
 
-                var mesh_filter = gameObject.AddComponent<MeshFilter>();
-                mesh_filter.sharedMesh = m_probe_mesh;
-                renderer = gameObject.AddComponent<MeshRenderer>();
-                renderer.sharedMaterials = new Material[0] { };
-            }
+            //    var mesh_filter          = gameObject.AddComponent<MeshFilter>();
+            //    mesh_filter.sharedMesh   = m_probe_mesh;
+            //    renderer                 = gameObject.AddComponent<MeshRenderer>();
+                
+            //    renderer.sharedMaterials = new Material[0] { };
+            //}
         }
 
 
@@ -608,7 +609,7 @@ namespace GameWorks
             }
 
 
-            if (m_probe_mesh != null)
+            if (m_probe_mesh != null && m_probe_mesh.bounds.extents == Vector3.zero )
             {
                 var bmin = Vector3.zero;
                 var bmax = Vector3.zero;
