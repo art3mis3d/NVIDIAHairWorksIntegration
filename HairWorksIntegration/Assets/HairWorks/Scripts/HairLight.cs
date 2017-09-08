@@ -180,13 +180,12 @@ namespace GameWorks
         }
 
         public hwi.LightData GetLightData()
-        {
-            var t = GetComponent<Transform>();
-            m_data.type = (int)m_type;
-            m_data.range = m_range;
-            m_data.color = new Color(m_color.r * m_intensity, m_color.g * m_intensity, m_color.b * m_intensity, 0.0f);
-            m_data.position = t.position;
-            m_data.direction = t.forward;
+        {           
+            m_data.type      = (int)m_type;
+            m_data.range     = m_range;
+            m_data.color     = new Color(m_color.r * m_intensity, m_color.g * m_intensity, m_color.b * m_intensity, 0.0f);
+            m_data.position  = transform.position;
+            m_data.direction = transform.forward;
 
             if (m_type == LightType.Directional)
             {
