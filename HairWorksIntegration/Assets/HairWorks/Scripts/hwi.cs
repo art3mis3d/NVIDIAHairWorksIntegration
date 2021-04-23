@@ -507,8 +507,8 @@ namespace GameWorks
         public delegate void hwLogCallback(System.IntPtr cstr);
 
 
-        [DllImport("HairWorksIntegration")] public static extern int HwGetSDKVersion();
-        [DllImport("HairWorksIntegration")] public static extern Bool HwLoadHairWorks();
+        [DllImport("HairWorksIntegration")] public static extern int hwGetSDKVersion();
+        [DllImport("HairWorksIntegration")] public static extern Bool hwLoadHairWorks();
         [DllImport("HairWorksIntegration")] public static extern void hwUnloadHairWorks();
 
         [DllImport("HairWorksIntegration")] public static extern IntPtr hwGetRenderEventFunc();

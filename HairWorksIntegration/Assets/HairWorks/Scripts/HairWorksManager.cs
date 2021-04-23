@@ -19,12 +19,12 @@ public class HairWorksManager : MonoBehaviour
 
     void OnEnable()
     {  
-        if (!Hwi.HwLoadHairWorks())
+        if (!Hwi.hwLoadHairWorks())
         {
             #if UNITY_EDITOR
             EditorUtility.DisplayDialog(
                 "Hair Works Integration",
-                "Failed to load HairWorks (version " + Hwi.HwGetSDKVersion() + ") dll. You need to get HairWorks SDK from NVIDIA website. Read document for more detail.",
+                "Failed to load HairWorks (version " + Hwi.hwGetSDKVersion() + ") dll. You need to get HairWorks SDK from NVIDIA website. Read document for more detail.",
                 "OK");
             #endif
 
@@ -42,7 +42,6 @@ public class HairWorksManager : MonoBehaviour
     {
         // Change depth stencil to match reversed z-buffer in 5.5
         Hwi.hwInitializeDepthStencil(true);
-       Application.targetFrameRate = 30;
     }
 
     void LateUpdate()

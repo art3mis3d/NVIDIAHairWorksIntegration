@@ -11,7 +11,7 @@ namespace GameWorks
     [AddComponentMenu("Hair Works/Misc/FixDeltaTime")]
     public class FixDeltaTime : MonoBehaviour
     {
-        public float m_targetFrameRate = 30.0f;
+        public float m_targetFrameRate = 120.0f;
 
 
         public IEnumerator Wait()
