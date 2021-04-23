@@ -8,7 +8,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using GameWorks;
 
-[ExecuteInEditMode]
+[ExecuteAlways]
 public class HairWorksManager : MonoBehaviour
 {
     static CommandBuffer    CmdBuffer_HairRender;

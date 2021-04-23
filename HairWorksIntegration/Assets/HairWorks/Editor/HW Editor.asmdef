@@ -1,0 +1,18 @@
+{
+    "name": "HWEditor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:6cd9749924cc80647a4d1f70e57ea22b"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
