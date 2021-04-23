@@ -36,6 +36,7 @@ hwSDK* hwContext::loadSDK()
     }
 
     char path[MAX_PATH] = {0};
+
     if(path[0] == 0) {
         // get path to this module
         HMODULE mod = 0;
@@ -48,6 +49,7 @@ hwSDK* hwContext::loadSDK()
                 break;
             }
         }
+		hwLog(path);
     }
 	g_hw_sdk = NvHair::loadSdk(path, NV_HAIR_VERSION, nullptr, nullptr);
     hwLog("hwContext::loadSDK(): %s (%s)\n", g_hw_sdk ? "succeeded" : "failed", path);

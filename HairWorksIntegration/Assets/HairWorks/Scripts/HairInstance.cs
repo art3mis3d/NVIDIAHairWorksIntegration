@@ -35,10 +35,10 @@ namespace GameWorks
         public bool m_invert_bone_x = true;
         public Mesh m_probe_mesh;
         public float unit = 100;
-        public hwi.Descriptor m_params = hwi.Descriptor.default_value;
-        hwi.HShader m_hshader = hwi.HShader.NullHandle;
-        hwi.HAsset m_hasset = hwi.HAsset.NullHandle;
-        hwi.HInstance m_hinstance = hwi.HInstance.NullHandle;
+        public Hwi.Descriptor m_params = Hwi.Descriptor.default_value;
+        Hwi.HShader m_hshader = Hwi.HShader.NullHandle;
+        Hwi.HAsset m_hasset = Hwi.HAsset.NullHandle;
+        Hwi.HInstance m_hinstance = Hwi.HInstance.NullHandle;
 
         public Transform[] m_bones;
         Matrix4x4[] m_inv_bindpose;
@@ -94,7 +94,7 @@ namespace GameWorks
         [HideInInspector]
         public Texture2D weights;
 
-        private Dictionary<hwi.TextureType, Texture2D> textureDictionary = new Dictionary<hwi.TextureType, Texture2D>();
+        private Dictionary<Hwi.TextureType, Texture2D> textureDictionary = new Dictionary<Hwi.TextureType, Texture2D>();
         private Dictionary<ReflectionProbe, IntPtr> probePointers = new Dictionary<ReflectionProbe, IntPtr>();
         private List<Texture2D> textures = new List<Texture2D>();
         private Vector4[] avCoeff = new Vector4[7];
@@ -123,12 +123,12 @@ namespace GameWorks
             // release existing shader
             if (m_hshader)
             {
-                hwi.hwShaderRelease(m_hshader);
-                m_hshader = hwi.HShader.NullHandle;
+                Hwi.hwShaderRelease(m_hshader);
+                m_hshader = Hwi.HShader.NullHandle;
             }
 
             // load shader
-            if (m_hshader = hwi.hwShaderLoadFromFile(Application.streamingAssetsPath + "/" + path_to_cso))
+            if (m_hshader = Hwi.hwShaderLoadFromFile(Application.streamingAssetsPath + "/" + path_to_cso))
             {
                 m_hair_shader = path_to_cso;
             }
@@ -139,7 +139,7 @@ namespace GameWorks
 
         public void ReloadHairShader()
         {
-            hwi.hwShaderReload(m_hshader);
+            Hwi.hwShaderReload(m_hshader);
             RepaintWindow();
         }
 
@@ -148,23 +148,23 @@ namespace GameWorks
             // release existing instance & asset
             if (m_hinstance)
             {
-                hwi.hwInstanceRelease(m_hinstance);
-                m_hinstance = hwi.HInstance.NullHandle;
+                Hwi.hwInstanceRelease(m_hinstance);
+                m_hinstance = Hwi.HInstance.NullHandle;
             }
             if (m_hasset)
             {
-                hwi.hwAssetRelease(m_hasset);
-                m_hasset = hwi.HAsset.NullHandle;
+                Hwi.hwAssetRelease(m_hasset);
+                m_hasset = Hwi.HAsset.NullHandle;
             }
 
             // load & create instance
-            if (m_hasset = hwi.hwAssetLoadFromFile(Application.streamingAssetsPath + "/" + path_to_apx, unit))
+            if (m_hasset = Hwi.hwAssetLoadFromFile(Application.streamingAssetsPath + "/" + path_to_apx, unit))
             {
                 m_hair_asset = path_to_apx;
-                m_hinstance = hwi.hwInstanceCreate(m_hasset);
+                m_hinstance = Hwi.hwInstanceCreate(m_hasset);
                 if (reset_params)
                 {
-                    hwi.hwAssetGetDefaultDescriptor(m_hasset, ref m_params);
+                    Hwi.hwAssetGetDefaultDescriptor(m_hasset, ref m_params);
                 }
             }
 
@@ -185,28 +185,28 @@ namespace GameWorks
 
         public void ReloadHairAsset()
         {
-            hwi.hwAssetReload(m_hasset);
-            hwi.hwAssetGetDefaultDescriptor(m_hasset, ref m_params);
-            hwi.hwInstanceSetDescriptor(m_hinstance, ref m_params);
+            Hwi.hwAssetReload(m_hasset);
+            Hwi.hwAssetGetDefaultDescriptor(m_hasset, ref m_params);
+            Hwi.hwInstanceSetDescriptor(m_hinstance, ref m_params);
             RepaintWindow();
         }
 
-        public void AssignTexture(hwi.TextureType type, Texture2D tex)
+        public void AssignTexture(Hwi.TextureType type, Texture2D tex)
         {
             if (tex == null)
             {
-                hwi.hwInstanceSetTexture(m_hinstance, type, IntPtr.Zero);
+                Hwi.hwInstanceSetTexture(m_hinstance, type, IntPtr.Zero);
                 return;
             }
 
-            hwi.hwInstanceSetTexture(m_hinstance, type, tex.GetNativeTexturePtr());
+            Hwi.hwInstanceSetTexture(m_hinstance, type, tex.GetNativeTexturePtr());
         }
 
         public void AssignAllTextures()
         {
             SetTextureDictionary();
 
-            hwi.TextureType[] types = (hwi.TextureType[])Enum.GetValues(typeof(hwi.TextureType));
+            Hwi.TextureType[] types = (Hwi.TextureType[])Enum.GetValues(typeof(Hwi.TextureType));
 
             for (int i = 0; i < textures.Count; i++)
             {
@@ -221,7 +221,7 @@ namespace GameWorks
 
         public void UpdateBones()
         {
-            int num_bones = hwi.hwAssetGetNumBones(m_hasset);
+            int num_bones = Hwi.hwAssetGetNumBones(m_hasset);
 
             if (num_bones == 0)
                 return;
@@ -238,7 +238,7 @@ namespace GameWorks
                 var children = m_root_bone.GetComponentsInChildren<Transform>();
                 for (int i = 0; i < num_bones; ++i)
                 {
-                    string name = hwi.hwAssetGetBoneNameString(m_hasset, i);
+                    string name = Hwi.hwAssetGetBoneNameString(m_hasset, i);
                     m_bones[i] = Array.Find(children, (a) => { return a.name == name; });
                     if (m_bones[i] == null) { m_bones[i] = m_root_bone; }
                 }
@@ -265,7 +265,7 @@ namespace GameWorks
                 // m_conversion_matrix is constant, optimize by premultiplying with m_inv_bindpose
                 for (int i = 0; i < num_bones; ++i)
                 {
-                    hwi.hwAssetGetBindPose(m_hasset, i, ref m_inv_bindpose[i]);
+                    Hwi.hwAssetGetBindPose(m_hasset, i, ref m_inv_bindpose[i]);
                     m_inv_bindpose[i] = m_conversion_matrix * m_inv_bindpose[i].inverse;
                 }
             }
@@ -311,9 +311,9 @@ namespace GameWorks
         {
             SetTextureList();
 
-            textureDictionary = new Dictionary<hwi.TextureType, Texture2D>();
+            textureDictionary = new Dictionary<Hwi.TextureType, Texture2D>();
 
-            hwi.TextureType[] types = (hwi.TextureType[])Enum.GetValues(typeof(hwi.TextureType));
+            Hwi.TextureType[] types = (Hwi.TextureType[])Enum.GetValues(typeof(Hwi.TextureType));
 
             for (int i = 0; i < textures.Count; i++)
             {
@@ -403,7 +403,7 @@ namespace GameWorks
             // If no active reflection probes in scene then return
             if (probeInstances.Count <= 0 || !useReflectionProbes)
             {
-                hwi.hwSetReflectionProbe(IntPtr.Zero, IntPtr.Zero);
+                Hwi.hwSetReflectionProbe(IntPtr.Zero, IntPtr.Zero);
                 return;
             }
 
@@ -415,7 +415,7 @@ namespace GameWorks
                 if (!probePointers.ContainsKey(probeInstances[0]))
                     probePointers.Add(probeInstances[0], GetProbeTexture(probeInstances[0]).GetNativeTexturePtr());
 
-                hwi.hwSetReflectionProbe(probePointers[probeInstances[0]], probePointers[probeInstances[0]]);
+                Hwi.hwSetReflectionProbe(probePointers[probeInstances[0]], probePointers[probeInstances[0]]);
 
 
                 return;
@@ -437,12 +437,12 @@ namespace GameWorks
 
                 if (dist2 > dist1)
                 {
-                    hwi.hwSetReflectionProbe(probePointers[probeInstances[0]], probePointers[probeInstances[1]]);
+                    Hwi.hwSetReflectionProbe(probePointers[probeInstances[0]], probePointers[probeInstances[1]]);
                     probeBlendAmount = 0.5f * (1.0f / (dist2 / (dist1 + 0.01f)));
                 }
                 else
                 {
-                    hwi.hwSetReflectionProbe(probePointers[probeInstances[1]], probePointers[probeInstances[0]]);
+                    Hwi.hwSetReflectionProbe(probePointers[probeInstances[1]], probePointers[probeInstances[0]]);
                     probeBlendAmount = 0.5f * (1.0f / (dist1 / (dist2 + 0.01f)));
                 }
 
@@ -532,12 +532,12 @@ namespace GameWorks
             //send probes
             if (dist2 > dist1)
             {
-                hwi.hwSetReflectionProbe(probePointers[probe1], probePointers[probe2]);
+                Hwi.hwSetReflectionProbe(probePointers[probe1], probePointers[probe2]);
                 probeBlendAmount = 0.5f * (1.0f / (dist2 / (dist1 + 0.01f)));
             }
             else
             {
-                hwi.hwSetReflectionProbe(probePointers[probe2], probePointers[probe1]);
+                Hwi.hwSetReflectionProbe(probePointers[probe2], probePointers[probe1]);
                 probeBlendAmount = 0.5f * (1.0f / (dist1 / (dist2 + 0.01f)));
             }
         }
@@ -566,8 +566,8 @@ namespace GameWorks
 
         void OnDestroy()
         {
-            hwi.hwInstanceRelease(m_hinstance);
-            hwi.hwAssetRelease(m_hasset);
+            Hwi.hwInstanceRelease(m_hinstance);
+            Hwi.hwAssetRelease(m_hasset);
         }
 
         void OnEnable()
@@ -613,7 +613,7 @@ namespace GameWorks
             {
                 var bmin = Vector3.zero;
                 var bmax = Vector3.zero;
-                hwi.hwInstanceGetBounds(m_hinstance, ref bmin, ref bmax);
+                Hwi.hwInstanceGetBounds(m_hinstance, ref bmin, ref bmax);
 
                 var center = (bmin + bmax) * 0.5f;
                 var size = bmax - center;
@@ -631,19 +631,19 @@ namespace GameWorks
                 updateBones = false;
             }
 
-            hwi.hwInstanceSetDescriptor(m_hinstance, ref m_params);
+            Hwi.hwInstanceSetDescriptor(m_hinstance, ref m_params);
 
             if (m_skinning_matrices != null)
-                hwi.hwInstanceUpdateSkinningMatrices(m_hinstance, m_skinning_matrices.Length, m_skinning_matrices_ptr);
+                Hwi.hwInstanceUpdateSkinningMatrices(m_hinstance, m_skinning_matrices.Length, m_skinning_matrices_ptr);
 
             GetReflectionProbeData();
 
             UpdateLightProbes();
 
-            hwi.hwSetSphericalHarmonics(ref avCoeff[0], ref avCoeff[1], ref avCoeff[2], ref avCoeff[3], ref avCoeff[4], ref avCoeff[5], ref avCoeff[6]);
+            Hwi.hwSetSphericalHarmonics(ref avCoeff[0], ref avCoeff[1], ref avCoeff[2], ref avCoeff[3], ref avCoeff[4], ref avCoeff[5], ref avCoeff[6]);
 
             Vector4 giparams = new Vector4(lightProbeIntensity, reflectionProbeIntensity, reflectionProbeSpecularity, probeBlendAmount);
-            hwi.hwSetGIParameters(ref giparams);
+            Hwi.hwSetGIParameters(ref giparams);
 
             HairWorksManager.Render(Camera.current, this);
         }
@@ -652,8 +652,8 @@ namespace GameWorks
         {
             if (!m_hasset) { return; }
 
-            hwi.hwSetShader(m_hshader);
-            hwi.hwRender(m_hinstance);
+            Hwi.hwSetShader(m_hshader);
+            Hwi.hwRender(m_hinstance);
         }
 
     }

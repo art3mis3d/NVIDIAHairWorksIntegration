@@ -15,87 +15,67 @@ public class HairWorksManager : MonoBehaviour
  
     static HashSet<Camera> s_cameras = new HashSet<Camera>();
 
-	public static bool HairWorksEnabled = true;
+    public static bool HairWorksEnabled = true;
 
     void OnEnable()
     {  
-        if (!hwi.hwLoadHairWorks())
+        if (!Hwi.HwLoadHairWorks())
         {
-			#if UNITY_EDITOR
-			EditorUtility.DisplayDialog(
+            #if UNITY_EDITOR
+            EditorUtility.DisplayDialog(
                 "Hair Works Integration",
-                "Failed to load HairWorks (version " + hwi.hwGetSDKVersion() + ") dll. You need to get HairWorks SDK from NVIDIA website. Read document for more detail.",
+                "Failed to load HairWorks (version " + Hwi.HwGetSDKVersion() + ") dll. You need to get HairWorks SDK from NVIDIA website. Read document for more detail.",
                 "OK");
-			#endif
+            #endif
 
-			HairWorksEnabled = false;
-			return;
-		}
+            HairWorksEnabled = false;
+            return;
+        }
 
-		HairWorksEnabled = true;
+        HairWorksEnabled = true;
 
-		hwi.hwSetLogCallback();
+        Hwi.hwSetLogCallback();
     }
 
-	// Use this for initialization
-	void Start ()
+    // Use this for initialization
+    void Start ()
     {
         // Change depth stencil to match reversed z-buffer in 5.5
- #if UNITY_5_5_OR_NEWER
-        hwi.hwInitializeDepthStencil(true);
-#endif 
+        Hwi.hwInitializeDepthStencil(true);
        Application.targetFrameRate = 30;
     }
 
     void LateUpdate()
     {
-        hwi.hwStepSimulation(Time.deltaTime);
+        Hwi.hwStepSimulation(Time.deltaTime);
     }
 
-	void OnDisable()
-	{
-		HairWorksEnabled = false;
-	}
+    void OnDisable()
+    {
+        HairWorksEnabled = false;
+    }
 
     void OnApplicationQuit()
     {
         ClearCommandBuffer();
     }
 
-	public static bool IsDeferred(Camera cam)
+    public static bool IsDeferred(Camera cam)
     {
-        if (cam.renderingPath == RenderingPath.DeferredShading
-#if UNITY_EDITOR
-#if !UNITY_5_5_OR_NEWER
-            || (cam.renderingPath == RenderingPath.UsePlayerSettings && PlayerSettings.renderingPath == RenderingPath.DeferredShading)
-#else
-            || (cam.renderingPath == RenderingPath.UsePlayerSettings && EditorGraphicsSettings.GetTierSettings(BuildTargetGroup.Standalone, GraphicsTier.Tier3).renderingPath == RenderingPath.DeferredShading)
-#endif
-
-#endif
-            )
-        {
+        if (cam.renderingPath == RenderingPath.DeferredShading)
             return true;
-        }
+
+#if UNITY_EDITOR
+        if (cam.renderingPath == RenderingPath.UsePlayerSettings && EditorGraphicsSettings.GetTierSettings(BuildTargetGroup.Standalone, GraphicsTier.Tier3).renderingPath == RenderingPath.DeferredShading)
+            return true;
+#endif
         return false;
     }
 
 
     public static bool DoesRenderToTexture(Camera cam)
     {
-            #if UNITY_5_5_OR_NEWER
-                    return true;
-            #else
-
-            if (UnityEngine.VR.VRSettings.enabled == true)
-            {
-                return true;
-            }
-            else
-            {
-                return IsDeferred(cam) || cam.targetTexture != null;
-            }
-            #endif
+        return true;
     }
 
     public static void Render( Camera CameraToAdd, HairInstance instance )
@@ -104,13 +84,13 @@ public class HairWorksManager : MonoBehaviour
         {
             CmdBuffer_HairRender      = new CommandBuffer();
             CmdBuffer_HairRender.name = "Hair";
-            CmdBuffer_HairRender.IssuePluginEvent( hwi.hwGetRenderEventFunc(), 0); 
+            CmdBuffer_HairRender.IssuePluginEvent( Hwi.hwGetRenderEventFunc(), 0); 
         }
 
-		if (!HairWorksEnabled)
-			return;
+        if (!HairWorksEnabled)
+            return;
 
-		if ( CameraToAdd != null )
+        if ( CameraToAdd != null )
         {
             CameraEvent s_timing;
 
@@ -126,7 +106,7 @@ public class HairWorksManager : MonoBehaviour
             Matrix4x4 V = CameraToAdd.worldToCameraMatrix;
             Matrix4x4 P = GL.GetGPUProjectionMatrix(CameraToAdd.projectionMatrix, DoesRenderToTexture(CameraToAdd));
             float fov   = CameraToAdd.fieldOfView;
-            hwi.hwSetViewProjection(ref V, ref P, fov);
+            Hwi.hwSetViewProjection(ref V, ref P, fov);
             HairLight.AssignLightData();
 
             if (!s_cameras.Contains(CameraToAdd))
@@ -136,11 +116,11 @@ public class HairWorksManager : MonoBehaviour
             }
         }
 
-        hwi.hwBeginScene();
+        Hwi.hwBeginScene();
 
-		instance.Render();
+        instance.Render();
 
-		hwi.hwEndScene();
+        Hwi.hwEndScene();
     }
 
     static public void ClearCommandBuffer()
@@ -149,15 +129,15 @@ public class HairWorksManager : MonoBehaviour
         {
             if (c != null)
             {
-				if (IsDeferred(c))
-				{
-					c.RemoveCommandBuffer(CameraEvent.BeforeImageEffects, CmdBuffer_HairRender);
-				}
-				else
-				{
-					c.RemoveCommandBuffer(CameraEvent.AfterImageEffectsOpaque, CmdBuffer_HairRender);
-				}
-			}
+                if (IsDeferred(c))
+                {
+                    c.RemoveCommandBuffer(CameraEvent.BeforeImageEffects, CmdBuffer_HairRender);
+                }
+                else
+                {
+                    c.RemoveCommandBuffer(CameraEvent.AfterImageEffectsOpaque, CmdBuffer_HairRender);
+                }
+            }
         }
         s_cameras.Clear();
     }

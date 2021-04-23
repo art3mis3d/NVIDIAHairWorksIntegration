@@ -15,7 +15,7 @@ namespace GameWorks
     {
         #region static
         static List<HairLight> s_instances;
-        static hwi.LightData[] s_light_data;
+        static Hwi.LightData[] s_light_data;
         static IntPtr s_light_data_ptr;
 
         static public List<HairLight> GetInstances()
@@ -31,12 +31,12 @@ namespace GameWorks
         {
             if (s_light_data == null)
             {
-                s_light_data = new hwi.LightData[hwi.LightData.MaxLights];
+                s_light_data = new Hwi.LightData[Hwi.LightData.MaxLights];
                 s_light_data_ptr = Marshal.UnsafeAddrOfPinnedArrayElement(s_light_data, 0);
             }
 
             List<HairLight> instances = GetInstances();
-            int n = Mathf.Min(instances.Count, hwi.LightData.MaxLights);
+            int n = Mathf.Min(instances.Count, Hwi.LightData.MaxLights);
             for (int i = 0; i < instances.Count; i++)
             {
                 if (i == n)
@@ -44,7 +44,7 @@ namespace GameWorks
 
                 s_light_data[i] = instances[i].GetLightData();
             }
-            hwi.hwSetLights(n, s_light_data_ptr);
+            Hwi.hwSetLights(n, s_light_data_ptr);
         }
         #endregion
 
@@ -76,7 +76,7 @@ namespace GameWorks
             x4096
         }
 
-        hwi.LightData m_data;
+        Hwi.LightData m_data;
 
         public bool m_copy_light_params = false;
         public LightType m_type = LightType.Directional;
@@ -179,7 +179,7 @@ namespace GameWorks
             return shadowParamsPointer;
         }
 
-        public hwi.LightData GetLightData()
+        public Hwi.LightData GetLightData()
         {           
             m_data.type      = (int)m_type;
             m_data.range     = m_range;
@@ -201,9 +201,9 @@ namespace GameWorks
         {
             GetInstances().Add(this);
 
-            if (GetInstances().Count > hwi.LightData.MaxLights)
+            if (GetInstances().Count > Hwi.LightData.MaxLights)
             {
-                Debug.LogWarning("Max HairLight is " + hwi.LightData.MaxLights + ". Current active HairLight is " + GetInstances().Count);
+                Debug.LogWarning("Max HairLight is " + Hwi.LightData.MaxLights + ". Current active HairLight is " + GetInstances().Count);
             }
 
             Shader shadowCopyShader = Shader.Find("Hidden/CopyShadowParams");
@@ -233,10 +233,10 @@ namespace GameWorks
         void OnDisable()
         {
             GetInstances().Remove(this);
-            hwi.hwSetShadowTexture(IntPtr.Zero);
+            Hwi.hwSetShadowTexture(IntPtr.Zero);
             unsafe
             {
-                hwi.hwSetShadowParams(IntPtr.Zero.ToPointer());
+                Hwi.hwSetShadowParams(IntPtr.Zero.ToPointer());
             }
             shadowMapPointer = IntPtr.Zero;
             shadowParamsPointer = IntPtr.Zero;
@@ -275,10 +275,10 @@ namespace GameWorks
             {
                 shadowMapPointer = IntPtr.Zero;
                 shadowParamsPointer = IntPtr.Zero;
-                hwi.hwSetShadowTexture(IntPtr.Zero);
+                Hwi.hwSetShadowTexture(IntPtr.Zero);
                 unsafe
                 {
-                    hwi.hwSetShadowParams(IntPtr.Zero.ToPointer());
+                    Hwi.hwSetShadowParams(IntPtr.Zero.ToPointer());
                 }
                 return;
             }
@@ -289,14 +289,14 @@ namespace GameWorks
             {
                 unsafe
                 {
-                    hwi.hwSetShadowParams(GetShadowParamsPointer().ToPointer());
+                    Hwi.hwSetShadowParams(GetShadowParamsPointer().ToPointer());
                 }
                 
             }
 
             if (shadowMapPointer == IntPtr.Zero)
             {
-                hwi.hwSetShadowTexture(GetShadowMapPointer());
+                Hwi.hwSetShadowTexture(GetShadowMapPointer());
                
             }
         }
